@@ -65,6 +65,7 @@ void CoolPlugin::onUnload() {
 
 
 void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string event_name) {
+	if (!coolEnabled) return;
 	// Ref: https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
 
 	ReplayDirectorWrapper replay_director = server.GetReplayDirector();
