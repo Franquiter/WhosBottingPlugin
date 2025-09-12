@@ -90,9 +90,6 @@
     <ClCompile Include="api.cpp">
       <Filter>Plugin\src</Filter>
     </ClCompile>
-    <ClCompile Include="paths.cpp">
-      <Filter>Plugin\src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imgui_rangeslider.h">
@@ -157,9 +154,6 @@
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>json</Filter>
-    </ClInclude>
-    <ClInclude Include="paths.h">
-      <Filter>Plugin\header</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

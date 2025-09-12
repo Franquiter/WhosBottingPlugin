@@ -5,7 +5,7 @@
 #include <map> 
 #include <iostream>
 #include "api.h"
-#include "paths.h"
+
 
 
 
@@ -50,13 +50,17 @@ void CoolPlugin::onLoad()
 
 		if (!coolEnabled) return;
 		if (last_results_.empty()) return;
+		int initial_y = 50;
+		int initial_x = 50;
+		int spacing = 18;
 
 		for (auto result : last_results_) {
 			//auto results = zealan_api(GetDocumentsPath());
 			canvas.SetColor(255, 0, 0, 255);            // Red
-			canvas.SetPosition(Vector2{ 50, 50 });
-			auto path = GetDemosPath(gameWrapper.get());
-			canvas.DrawString(path, 2, 2);
+			canvas.SetPosition(Vector2{ initial_x, initial_y });
+			std::string text = std::string(result.first) + ":" + std::to_string(result.second);
+			canvas.DrawString(text, 2, 2);
+			initial_y += spacing;
 		}
 
 		});
@@ -112,7 +116,7 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 
 	}
 	catch (std::exception& e) {
-		LOG(" > FAILED to save and submit replay, exception: ", e.what());
+		LOG(std::string(" > FAILED to save and submit replay, exception: ") + e.what());
 		return;
 	}
 

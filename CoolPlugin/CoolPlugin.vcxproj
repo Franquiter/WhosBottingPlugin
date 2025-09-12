@@ -94,7 +94,6 @@
   <ItemGroup>
     <ClCompile Include="api.cpp" />
     <ClCompile Include="CoolPluginSettings.cpp" />
-    <ClCompile Include="paths.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imguivariouscontrols.cpp" />
     <ClCompile Include="imgui\imgui_additions.cpp" />
@@ -116,7 +115,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="api.h" />
-    <ClInclude Include="paths.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imguivariouscontrols.h" />
