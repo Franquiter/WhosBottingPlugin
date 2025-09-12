@@ -22,6 +22,7 @@ class CoolPlugin: public BakkesMod::Plugin::BakkesModPlugin,
 	void onLoad() override;
 	void onUnload() override;
 	void hk_on_game_end(ServerWrapper server, void* params, std::string event_name);
+	void clear_results(ServerWrapper server, void* params, std::string event_name);
 
 public:
 	void RenderSettings() override; // Uncomment if you wanna render your own tab in the settings menu

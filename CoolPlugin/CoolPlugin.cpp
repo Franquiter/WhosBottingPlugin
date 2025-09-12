@@ -28,7 +28,6 @@ void CoolPlugin::onLoad()
 		coolEnabled = cvar.getBoolValue();
 			});
 	{ // Hook game ending events like https://github.com/bakkesmodorg/AutoReplayUploader does
-		if (!coolEnabled) return;
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.EventMatchEnded",
 			bind(
@@ -44,18 +43,28 @@ void CoolPlugin::onLoad()
 				this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3
 			)
 		);
+		gameWrapper->HookEventWithCaller<ServerWrapper>(
+			"Function TAGame.GameEvent_Soccar_TA.PostBeginPlay",
+			bind(
+				&CoolPlugin::clear_results,
+				this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3
+			)
+		);
 	}
 
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
 
 		if (!coolEnabled) return;
+		canvas.SetColor(255, 0, 0, 255);
+		canvas.SetPosition(Vector2{ 300, 50 });
+		canvas.DrawString("Enabled", 2, 2);
 		if (last_results_.empty()) return;
+		//LOG("draw!");
 		int initial_y = 50;
 		int initial_x = 50;
-		int spacing = 18;
+		int spacing = 25;
 
 		for (auto result : last_results_) {
-			//auto results = zealan_api(GetDocumentsPath());
 			canvas.SetColor(255, 0, 0, 255);            // Red
 			canvas.SetPosition(Vector2{ initial_x, initial_y });
 			std::string text = std::string(result.first) + ":" + std::to_string(result.second);
@@ -75,6 +84,7 @@ void CoolPlugin::onUnload() {
 
 void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string event_name) {
 	if (!coolEnabled) return;
+	//LOG("plugin is enabled and game was finished/destroyed");
 	// Ref: https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
 
 	ReplayDirectorWrapper replay_director = server.GetReplayDirector();
@@ -121,4 +131,8 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 	}
 
 	LOG(" > Finished processing replay!");
+}
+
+void CoolPlugin::clear_results(ServerWrapper server, void* params, std::string event_name) {
+	last_results_.clear();
 }
