@@ -17,9 +17,11 @@ class CoolPlugin: public BakkesMod::Plugin::BakkesModPlugin,
 	//std::shared_ptr<bool> enabled;
 
 	//Boilerplate
+	private: std::map<std::string, int> last_results_;
+
 	void onLoad() override;
 	void onUnload() override;
-
+	void hk_on_game_end(ServerWrapper server, void* params, std::string event_name);
 
 public:
 	void RenderSettings() override; // Uncomment if you wanna render your own tab in the settings menu

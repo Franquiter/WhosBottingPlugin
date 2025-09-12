@@ -44,7 +44,7 @@ map<string, int> zealan_api(string replay_path) {
 
     }
     else {
-        cerr << "Error: " << r.status_code << " " << r.error.message << endl;
+        LOG("Error: ", r.status_code, " ", r.error.message);
     }
 
     return results;
