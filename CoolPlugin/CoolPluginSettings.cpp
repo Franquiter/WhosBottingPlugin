@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "CoolPlugin.h"
-
+#include "keys.h"
 void CoolPlugin::RenderSettings() {
     ImGui::TextUnformatted("A really cool plugin");
-
+    static int selected = 0;
 
     CVarWrapper enableCvar = cvarManager->getCvar("cool_enabled");
     if (!enableCvar) { return; }
@@ -14,5 +14,7 @@ void CoolPlugin::RenderSettings() {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Toggle Cool Plugin");
     }
-
+    if (ImGui::ListBox("Add Keybind", &selected, possibleKeyNames, IM_ARRAYSIZE(possibleKeyNames), 4)) {
+        cvarManager->getCvar("whoisbotting_keybind").setValue(possibleKeyNames[selected]);
+    }
 }

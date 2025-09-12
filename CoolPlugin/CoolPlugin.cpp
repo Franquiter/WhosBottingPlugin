@@ -5,7 +5,7 @@
 #include <map> 
 #include <iostream>
 #include "api.h"
-
+#include <future>
 
 
 
@@ -27,6 +27,8 @@ void CoolPlugin::onLoad()
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
 		coolEnabled = cvar.getBoolValue();
 			});
+	cvarManager->registerCvar("whoisbotting_keybind", "", "Keybind name", true, true);
+
 	{ // Hook game ending events like https://github.com/bakkesmodorg/AutoReplayUploader does
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.EventMatchEnded",
@@ -55,20 +57,21 @@ void CoolPlugin::onLoad()
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
 
 		if (!coolEnabled) return;
-		canvas.SetColor(255, 0, 0, 255);
-		canvas.SetPosition(Vector2{ 300, 50 });
+		canvas.SetColor(0, 255, 0, 255);//green
+		canvas.SetPosition(Vector2{ 1820, 50 });
 		canvas.DrawString("Enabled", 2, 2);
+
 		if (last_results_.empty()) return;
 		//LOG("draw!");
 		int initial_y = 50;
 		int initial_x = 50;
-		int spacing = 25;
+		int spacing = 35;
 
 		for (auto result : last_results_) {
-			canvas.SetColor(255, 0, 0, 255);            // Red
+			canvas.SetColor(255, 255, 255, 255);            // white
 			canvas.SetPosition(Vector2{ initial_x, initial_y });
 			std::string text = std::string(result.first) + ":" + std::to_string(result.second);
-			canvas.DrawString(text, 2, 2);
+			canvas.DrawString(text, 1.7, 1.7);
 			initial_y += spacing;
 		}
 
@@ -119,8 +122,9 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 
 
 		
+		auto future = std::async(std::launch::async, zealan_api, std::string(TEMP_EXPORT_PATH));
 
-		last_results_ = zealan_api(std::string(TEMP_EXPORT_PATH));
+		last_results_ = future.get();
 		std::filesystem::remove(TEMP_EXPORT_PATH);
 
 
@@ -135,4 +139,11 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 
 void CoolPlugin::clear_results(ServerWrapper server, void* params, std::string event_name) {
 	last_results_.clear();
+}
+
+void onKeyPress() {
+	if (ImGui::IsKeyDown == ) {
+
+	}
+
 }
