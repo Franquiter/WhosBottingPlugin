@@ -49,11 +49,16 @@ void CoolPlugin::onLoad()
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
 
 		if (!coolEnabled) return;
-		//auto results = zealan_api(GetDocumentsPath());
-		canvas.SetColor(255, 0, 0, 255);            // Red
-		canvas.SetPosition(Vector2{ 50, 50 });
-		auto path = GetDemosPath(gameWrapper.get());
-		canvas.DrawString(path , 2, 2);
+		if (last_results_.empty()) return;
+
+		for (auto result : last_results_) {
+			//auto results = zealan_api(GetDocumentsPath());
+			canvas.SetColor(255, 0, 0, 255);            // Red
+			canvas.SetPosition(Vector2{ 50, 50 });
+			auto path = GetDemosPath(gameWrapper.get());
+			canvas.DrawString(path, 2, 2);
+		}
+
 		});
 
 
