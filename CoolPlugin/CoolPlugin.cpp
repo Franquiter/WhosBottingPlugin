@@ -157,9 +157,16 @@ void CoolPlugin::clear_results(ServerWrapper server, void* params, std::string e
 
 void CoolPlugin::onKeybindPress() {   //interpolated google told me to do this i dont understand this :( sorry i didnt know how to call hk_on_game_end outside of an hook :(
 	if (!coolEnabled) return;
-	ServerWrapper sw = gameWrapper->GetGameEventAsServer(); 
-	if (!sw) { LOG("No server"); return; }
-	hk_on_game_end(sw, nullptr, "fake_hook");
+	if (gameWrapper->IsInOnlineGame()) {
+		ServerWrapper sw = gameWrapper->GetOnlineGame();
+		if (!sw) { LOG("No online game state"); return; }
+		hk_on_game_end(sw, nullptr, "fake_hook");
+	}
+	else {
+		ServerWrapper sw = gameWrapper->GetGameEventAsServer();
+		if (!sw) { LOG("No server game state"); return; }
+		hk_on_game_end(sw, nullptr, "fake_hook");
+	}
 }
 
 
