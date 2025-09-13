@@ -155,6 +155,9 @@
     <ClInclude Include="json.hpp">
       <Filter>json</Filter>
     </ClInclude>
+    <ClInclude Include="Keys.h">
+      <Filter>Plugin\header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CoolPlugin.rc">

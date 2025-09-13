@@ -27,7 +27,21 @@ void CoolPlugin::onLoad()
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
 		coolEnabled = cvar.getBoolValue();
 			});
-	cvarManager->registerCvar("whoisbotting_keybind", "", "Keybind name", true, true);
+	cvarManager->registerCvar("whoisbotting_keybind", "", "Keybind name", true, true)
+		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		std::string newKey = cvar.getStringValue();
+		if (!oldValue.empty()) UnbindKey(oldValue);
+		if (!newKey.empty())   BindKey(newKey);
+			});
+
+	cvarManager->registerNotifier("whoisbotting_k_pressed",
+		[this](std::vector<std::string>) { onKeybindPress(); },
+		"Key pressed trigger", PERMISSION_ALL);
+
+	{
+		std::string key = cvarManager->getCvar("whoisbotting_keybind").getStringValue();
+		if (!key.empty()) BindKey(key);
+	}
 
 	{ // Hook game ending events like https://github.com/bakkesmodorg/AutoReplayUploader does
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
@@ -58,7 +72,7 @@ void CoolPlugin::onLoad()
 
 		if (!coolEnabled) return;
 		canvas.SetColor(0, 255, 0, 255);//green
-		canvas.SetPosition(Vector2{ 1820, 50 });
+		canvas.SetPosition(Vector2{ 1720, 50 });
 		canvas.DrawString("Enabled", 2, 2);
 
 		if (last_results_.empty()) return;
@@ -124,7 +138,7 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 		
 		auto future = std::async(std::launch::async, zealan_api, std::string(TEMP_EXPORT_PATH));
 
-		last_results_ = future.get();
+		last_results_ = future.get();				//this makes stutter idk why....
 		std::filesystem::remove(TEMP_EXPORT_PATH);
 
 
@@ -141,9 +155,21 @@ void CoolPlugin::clear_results(ServerWrapper server, void* params, std::string e
 	last_results_.clear();
 }
 
-void onKeyPress() {
-	if (ImGui::IsKeyDown == ) {
+void CoolPlugin::onKeybindPress() {   //interpolated google told me to do this i dont understand this :( sorry i didnt know how to call hk_on_game_end outside of an hook :(
+	if (!coolEnabled) return;
+	ServerWrapper sw = gameWrapper->GetGameEventAsServer(); 
+	if (!sw) { LOG("No server"); return; }
+	hk_on_game_end(sw, nullptr, "fake_hook");
+}
 
+
+void CoolPlugin::BindKey(std::string key) {
+	if (key.empty()) {
+		return;
 	}
+	cvarManager->executeCommand("bind " + key + " whoisbotting_k_pressed");
+}
 
+void CoolPlugin::UnbindKey(std::string key) {
+	cvarManager->executeCommand("unbind " + key);
 }
