@@ -3,6 +3,7 @@
 #include "API.h"
 #include "Framework.h"
 #include "GuiBase.h"
+#include "ReplayInfo.h"
 #include "bakkesmod/plugin/PluginSettingsWindow.h"
 #include "bakkesmod/plugin/bakkesmodplugin.h"
 #include "bakkesmod/plugin/pluginwindow.h"
@@ -14,15 +15,21 @@ constexpr auto plugin_version =
 class WhosBottingPlugin : public BakkesMod::Plugin::BakkesModPlugin, public SettingsWindowBase {
 private:
 	void onLoad() override;
-	void onUnload() override;
 
-	void hk_OnGameEnd(ServerWrapper server, void* params, std::string event_name);
+	void TrySendReplay(ServerWrapper server, bool isMidGame);
 	void BindKey(std::string key);
 	void UnbindKey(std::string key);
 	void OnKeybindPress();
 
-	std::optional<std::future<API::Result>> replayResultFuture;
+	// When a game completes (we get the title screen), we can store the replay ID here
+	// This prevents double sends of completed games
+	std::optional<ReplayInfo> lastSentCompletedReplayInfo = std::nullopt;
+	std::optional<std::future<API::Result>> replayResultFuture = std::nullopt;
 	void SendReplayAsync(const std::vector<uint8_t>& replayBytes);
+	bool IsReplaySending();
+
+	void hk_OnGameEnd(ServerWrapper server, void* params, std::string eventName);
+	void hk_OnGameLeft(ServerWrapper server, void* params, std::string eventName);
 
 	void ShowNotif(std::string title, std::string description, bool isError = false);
 

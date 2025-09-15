@@ -109,6 +109,7 @@
     <ClCompile Include="libsrc\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\WhosBottingPlugin.cpp" />
     <ClCompile Include="src\GuiBase.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\API.h" />
@@ -130,9 +131,11 @@
     <ClInclude Include="src\Logging.h" />
     <ClInclude Include="src\Framework.h" />
     <ClInclude Include="src\GuiBase.h" />
+    <ClInclude Include="src\ReplayInfo.h" />
     <ClInclude Include="src\WhosBottingPlugin.h" />
     <ClInclude Include="libsrc\json\json.hpp" />
     <ClInclude Include="src\Version.h" />
+    <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

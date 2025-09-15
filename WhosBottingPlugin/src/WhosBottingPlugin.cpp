@@ -1,5 +1,6 @@
 #include "WhosBottingPlugin.h"
 
+#include "Utils.h"
 #include "api.h"
 #include "bakkesmod/wrappers/GameWrapper.h"
 #include "bakkesmod/wrappers/canvaswrapper.h"
@@ -14,7 +15,7 @@ void WhosBottingPlugin::onLoad() {
 	// This line is required for LOG to work and must be before any use of LOG()
 	g_GlobalCvarManager = cvarManager;
 
-	cvarManager->registerCvar("wbp_enabled", "0", "Enable Cool", true, true, 0, true, 1)
+	cvarManager->registerCvar("wbp_enabled", "1", "Enable the plugin", true, true, 0, true, 1)
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) { pluginEnabled = cvar.getBoolValue(); });
 	cvarManager->registerCvar("whoisbotting_keybind", "F", "Keybind name", true, true)
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
@@ -40,7 +41,7 @@ void WhosBottingPlugin::onLoad() {
 
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.Destroyed",
-			bind(&WhosBottingPlugin::hk_OnGameEnd, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+			bind(&WhosBottingPlugin::hk_OnGameLeft, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 		);
 	}
 
@@ -49,8 +50,7 @@ void WhosBottingPlugin::onLoad() {
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
 		if (replayResultFuture.has_value()) {
 			// Cool trick to check if our future is done yet
-			bool isReady = replayResultFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-			if (isReady) {
+			if (!IsReplaySending()) {
 				auto result = replayResultFuture->get();
 				if (result.IsValid()) {
 					std::stringstream stream = {};
@@ -69,44 +69,48 @@ void WhosBottingPlugin::onLoad() {
 	});
 }
 
-void WhosBottingPlugin::onUnload() {
-	// ...
-}
-
-void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::string event_name) {
+void WhosBottingPlugin::TrySendReplay(ServerWrapper server, bool isMidGame) {
 	if (!pluginEnabled) return;
 
 	//  Ref:
 	//  https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
 
-	ReplayDirectorWrapper replayDirector = server.GetReplayDirector();
-	if (!replayDirector) return;
-
-	ReplaySoccarWrapper soccarReplay = replayDirector.GetReplay();
+	auto soccarReplay = Utils::GetReplayFromServer(server);
 	if (!soccarReplay) return;
 
 	if (soccarReplay.GetbFileCorrupted()) {
-		LOG("hk_OnGameEnd(): Skipping corrupted replay");
+		LOG("TrySendReplay(): Skipping corrupted replay");
 		return;
 	}
 
 	constexpr int MIN_FRAMES = 100;
 	if (soccarReplay.GetNumFrames() < MIN_FRAMES) {
-		LOG("hk_OnGameEnd(): Skipping replay with only {} frames", soccarReplay.GetNumFrames());
+		LOG("TrySendReplay(): Skipping replay with only {} frames", soccarReplay.GetNumFrames());
 		return;
 	}
 
 	if (server.IsPlayingTraining()) {
-		LOG("hk_OnGameEnd(): Skipping training replay");
+		LOG("TrySendReplay(): Skipping training replay");
 		return;
 	}
 
 	if (server.GetNumPlayers() < 2) {
-		LOG("hk_OnGameEnd(): Disgarding replay with only ", server.GetNumPlayers(), " player(s)");
+		LOG("TrySendReplay(): Disgarding replay with only {} player(s)", server.GetNumPlayers());
 		return;
 	}
 
-	LOG(" > Completing replay...");
+	// Prevent sending while a request is still pending
+	// Otherwise, it will lag them because it will forcibly await the previous request
+	if (IsReplaySending()) {
+		LOG("TrySendReplay(): A replay is already sending, ignoring...");
+		return;
+	}
+
+	auto replayInfo = ReplayInfo(soccarReplay);
+	if (replayInfo.id == lastSentCompletedReplayInfo->id) {
+		LOG("TrySendReplay(): Replay already submitted, ignoring...");
+		return;
+	}
 	try {
 		constexpr const char* TEMP_EXPORT_PATH = "___wbp_temp_replay_export.replay";
 		soccarReplay.StopRecord();
@@ -119,37 +123,46 @@ void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::st
 		std::filesystem::remove(TEMP_EXPORT_PATH);
 
 		SendReplayAsync(replayBytes);
+		LOG("Replay sent successfully!");
 	} catch (std::exception& e) {
 		ShowError("Replay analysis failed", std::format("Exception thrown during submission: \"{}\"", e.what()));
 		return;
 	}
 
-	LOG(" > Finished processing replay!");
+	if (!isMidGame) {
+		// Only if the game is completed
+		lastSentCompletedReplayInfo = replayInfo;
+	}
 }
 
 void WhosBottingPlugin::OnKeybindPress() {
-	// interpolated google told me to do this i dont understand this :( sorry i didnt
-	// know how to call hk_on_game_end outside of an hook :(
 	if (!pluginEnabled) return;
-	if (gameWrapper->IsInOnlineGame()) {
-		ServerWrapper sw = gameWrapper->GetOnlineGame();
-		if (!sw) {
-			LOG("No online game state");
-			return;
-		}
-		hk_OnGameEnd(sw, nullptr, "fake_hook");
-	} else {
-		ServerWrapper sw = gameWrapper->GetGameEventAsServer();
-		if (!sw) {
-			LOG("No server game state");
-			return;
-		}
-		hk_OnGameEnd(sw, nullptr, "fake_hook");
+
+	ServerWrapper server = gameWrapper->GetOnlineGame();
+	if (server) {
+		TrySendReplay(server, true);
 	}
 }
 
 void WhosBottingPlugin::SendReplayAsync(const std::vector<uint8_t>& replayBytes) {
 	replayResultFuture = std::async(std::launch::async, API::SendReplayToDetector, replayBytes);
+}
+
+bool WhosBottingPlugin::IsReplaySending() {
+	if (replayResultFuture.has_value()) {
+		bool isReady = replayResultFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+		return !isReady;
+	} else {
+		return false;
+	}
+}
+
+void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::string eventName) {
+	TrySendReplay(server, false);
+}
+
+void WhosBottingPlugin::hk_OnGameLeft(ServerWrapper server, void* params, std::string eventName) {
+	TrySendReplay(server, false);
 }
 
 void WhosBottingPlugin::ShowNotif(std::string title, std::string description, bool isError) {
