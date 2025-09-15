@@ -39,46 +39,46 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\imgui\imgui.cpp">
+    <ClCompile Include="libsrc\imgui\imgui.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_additions.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_additions.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_demo.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_demo.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_draw.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_draw.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_impl_dx11.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_impl_win32.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_rangeslider.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_rangeslider.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_searchablecombo.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_searchablecombo.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_timeline.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_timeline.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_widgets.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_widgets.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imguivariouscontrols.cpp">
+    <ClCompile Include="libsrc\imgui\imguivariouscontrols.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_stdlib.cpp">
+    <ClCompile Include="libsrc\imgui\imgui_stdlib.cpp">
       <Filter>imgui\implementation</Filter>
     </ClCompile>
     <ClCompile Include="src\GuiBase.cpp">
       <Filter>Plugin\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\api.cpp">
+    <ClCompile Include="src\API.cpp">
       <Filter>Plugin\src</Filter>
     </ClCompile>
     <ClCompile Include="src\WhosBottingPluginSettings.cpp">
@@ -89,64 +89,64 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\imgui\imgui_rangeslider.h">
+    <ClInclude Include="libsrc\imgui\imgui_rangeslider.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_searchablecombo.h">
+    <ClInclude Include="libsrc\imgui\imgui_searchablecombo.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_timeline.h">
+    <ClInclude Include="libsrc\imgui\imgui_timeline.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imguivariouscontrols.h">
+    <ClInclude Include="libsrc\imgui\imguivariouscontrols.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imstb_rectpack.h">
+    <ClInclude Include="libsrc\imgui\imstb_rectpack.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imstb_textedit.h">
+    <ClInclude Include="libsrc\imgui\imstb_textedit.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imstb_truetype.h">
+    <ClInclude Include="libsrc\imgui\imstb_truetype.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imconfig.h">
+    <ClInclude Include="libsrc\imgui\imconfig.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui.h">
+    <ClInclude Include="libsrc\imgui\imgui.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_additions.h">
+    <ClInclude Include="libsrc\imgui\imgui_additions.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_dx11.h">
+    <ClInclude Include="libsrc\imgui\imgui_impl_dx11.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_impl_win32.h">
+    <ClInclude Include="libsrc\imgui\imgui_impl_win32.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_internal.h">
+    <ClInclude Include="libsrc\imgui\imgui_internal.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\version.h">
+    <ClInclude Include="src\Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_stdlib.h">
+    <ClInclude Include="libsrc\imgui\imgui_stdlib.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
-    <ClInclude Include="src\framework.h">
+    <ClInclude Include="src\Framework.h">
       <Filter>PCH</Filter>
     </ClInclude>
-    <ClInclude Include="src\logging.h">
+    <ClInclude Include="src\Logging.h">
       <Filter>Plugin\header</Filter>
     </ClInclude>
     <ClInclude Include="src\GuiBase.h">
       <Filter>Plugin\header</Filter>
     </ClInclude>
-    <ClInclude Include="src\api.h">
+    <ClInclude Include="src\API.h">
       <Filter>Plugin\header</Filter>
     </ClInclude>
-    <ClInclude Include="src\json.hpp">
+    <ClInclude Include="libsrc\json\json.hpp">
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="src\Keys.h">
