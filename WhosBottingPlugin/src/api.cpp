@@ -5,26 +5,25 @@
 #include <fstream>
 #include <vector>
 
-using namespace std;
 #include "json.hpp"
 using json = nlohmann::json;
+
 #include <cpr/cpr.h>
-using namespace cpr;
 
-map<string, int> zealan_api(string replay_path) {
-    ifstream replay(replay_path, ios::binary);
+std::map<std::string, int> zealan_api(std::string replay_path) {
+    std::ifstream replay(replay_path, std::ios::binary);
 
-    vector<uint8_t> buffer(
-        (istreambuf_iterator<char>(replay)),
-        istreambuf_iterator<char>()
+   std::vector<uint8_t> buffer(
+        (std::istreambuf_iterator<char>(replay)),
+         std::istreambuf_iterator<char>()
     );
 
-    auto r = Post(
-        Url{ "https://whosbotting.com/analyze" },
-        Header{ {"Content-Type", "text/plain"}, {"Accept", "application/json"} },
-        Body{ string(buffer.begin(), buffer.end()) }
+    auto r = cpr::Post(
+		cpr::Url{ "https://whosbotting.com/analyze" },
+		cpr::Header{ {"Content-Type", "text/plain"}, {"Accept", "application/json"} },
+		cpr::Body{ std::string(buffer.begin(), buffer.end()) }
     );
-    map<string, int> results;
+	std::map<std::string, int> results;
     if (r.status_code == 200) {
         json j = json::parse(r.text);
         //ofstream out("analysis.json", std::ios::binary);
@@ -35,7 +34,7 @@ map<string, int> zealan_api(string replay_path) {
 
 
         for (const auto player : j["player_results"]) {
-            string name = player["name"].get<string>();
+			std::string name = player["name"].get<std::string>();
             int confidence = player["confidence_percent"].get<int>();
 
             results[name] = confidence;
