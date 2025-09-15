@@ -1,7 +1,7 @@
 #pragma once
-#include <string>
 #include <map>
+#include <string>
 
 namespace API {
-	std::map<std::string, int> send_replay_to_detector(std::string replay_path);
+	std::map<std::string, int> SendReplayToDetector(std::string replay_path);
 }

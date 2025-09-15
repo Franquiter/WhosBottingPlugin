@@ -1,9 +1,6 @@
 #pragma once
 
-
-
-const char* possibleKeyNames[] =
-{
+constexpr const char* POSSIBLE_KEY_NAMES[] = {
 	"",
 	"XboxTypeS_DPad_Up",
 	"XboxTypeS_DPad_Left",

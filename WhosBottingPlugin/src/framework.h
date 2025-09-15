@@ -4,16 +4,15 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
 #define RPC_NO_WINDOWS_H
-#include "bakkesmod/plugin/bakkesmodplugin.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_rangeslider.h>
+#include <imgui/imgui_searchablecombo.h>
+#include <imgui/imgui_stdlib.h>
 
-#include <string>
-#include <vector>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_stdlib.h>
-#include <imgui/imgui_searchablecombo.h>
-#include <imgui/imgui_rangeslider.h>
-
+#include "bakkesmod/plugin/bakkesmodplugin.h"
 #include "logging.h"
