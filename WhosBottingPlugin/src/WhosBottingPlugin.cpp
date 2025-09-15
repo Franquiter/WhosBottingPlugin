@@ -148,7 +148,7 @@ void WhosBottingPlugin::SendReplayAsync(const std::vector<uint8_t>& replayBytes)
 
 void WhosBottingPlugin::ShowNotif(std::string title, std::string description, bool isError) {
 	// Force-enable toast notifications
-	if (auto notifCvar = cvarManager->getCvar("cl_notifications_enable_beta")) {
+	if (auto notifCvar = cvarManager->getCvar("cl_notifications_enabled_beta")) {
 		notifCvar.setValue(1);
 	}
 
