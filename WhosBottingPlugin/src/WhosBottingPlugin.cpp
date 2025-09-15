@@ -48,10 +48,10 @@ void WhosBottingPlugin::onLoad() {
 	// Here we display toasts for all processed replays
 	// TODO: Organize, make replay result a structure
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
-		if (replayResultFuture.has_value()) {
+		if (replaySendState.has_value()) {
 			// Cool trick to check if our future is done yet
 			if (!IsReplaySending()) {
-				auto result = replayResultFuture->get();
+				auto result = replaySendState->resultFuture.get();
 				if (result.IsValid()) {
 					std::stringstream stream = {};
 					for (auto [player, percent] : result.playerPercents) {
@@ -63,7 +63,7 @@ void WhosBottingPlugin::onLoad() {
 				}
 
 				// Remove optional value
-				replayResultFuture = std::nullopt;
+				replaySendState = std::nullopt;
 			}
 		}
 	});
@@ -145,12 +145,13 @@ void WhosBottingPlugin::OnKeybindPress() {
 }
 
 void WhosBottingPlugin::SendReplayAsync(const std::vector<uint8_t>& replayBytes) {
-	replayResultFuture = std::async(std::launch::async, API::SendReplayToDetector, replayBytes);
+	replaySendState =
+		SendReplayState{std::async(std::launch::async, API::SendReplayToDetector, replayBytes), std::chrono::system_clock::now()};
 }
 
 bool WhosBottingPlugin::IsReplaySending() {
-	if (replayResultFuture.has_value()) {
-		bool isReady = replayResultFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+	if (replaySendState.has_value()) {
+		bool isReady = replaySendState->resultFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 		return !isReady;
 	} else {
 		return false;

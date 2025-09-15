@@ -24,7 +24,13 @@ private:
 	// When a game completes (we get the title screen), we can store the replay ID here
 	// This prevents double sends of completed games
 	std::optional<ReplayInfo> lastSentCompletedReplayInfo = std::nullopt;
-	std::optional<std::future<API::Result>> replayResultFuture = std::nullopt;
+
+	struct SendReplayState {
+		std::future<API::Result> resultFuture;
+		std::chrono::time_point<std::chrono::system_clock> sendTime;
+	};
+
+	std::optional<SendReplayState> replaySendState = std::nullopt;
 	void SendReplayAsync(const std::vector<uint8_t>& replayBytes);
 	bool IsReplaySending();
 

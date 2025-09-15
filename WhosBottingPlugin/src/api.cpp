@@ -12,10 +12,14 @@ using json = nlohmann::json;
 #include <cpr/cpr.h>
 
 API::Result API::SendReplayToDetector(const std::vector<uint8_t>& replayBytes) {
+	constexpr int TIMEOUT_MS = 5000;
+
 	auto response = cpr::Post(
 		cpr::Url{"https://whosbotting.com/analyze"},
 		cpr::Header{{"Content-Type", "text/plain"}, {"Accept", "application/json"}},
-		cpr::Body{std::string(replayBytes.begin(), replayBytes.end())}
+		cpr::Body{std::string(replayBytes.begin(), replayBytes.end())},
+		cpr::Timeout(TIMEOUT_MS),
+		cpr::ConnectTimeout(TIMEOUT_MS)
 	);
 
 	Result result;
