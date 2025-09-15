@@ -1,9 +1,5 @@
 #include "WhosBottingPlugin.h"
 
-#include <future>
-#include <iostream>
-#include <map>
-
 #include "api.h"
 #include "bakkesmod/wrappers/GameWrapper.h"
 #include "bakkesmod/wrappers/canvaswrapper.h"
@@ -11,19 +7,16 @@
 
 BAKKESMOD_PLUGIN(WhosBottingPlugin, "WhosBottingPlugin", plugin_version, PLUGINTYPE_FREEPLAY)
 
-std::shared_ptr<CVarManagerWrapper> g_GlobalCvarManager;
-bool coolEnabled = false;
+std::shared_ptr<CVarManagerWrapper> g_GlobalCvarManager; // TODO: Move
+bool pluginEnabled = true;								 // TODO: Move
 
 void WhosBottingPlugin::onLoad() {
 	// This line is required for LOG to work and must be before any use of LOG()
 	g_GlobalCvarManager = cvarManager;
 
-	// do something when it loads
-	LOG("Hello I'm WhosBottingPlugin B)");
-
 	cvarManager->registerCvar("wbp_enabled", "0", "Enable Cool", true, true, 0, true, 1)
-		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) { coolEnabled = cvar.getBoolValue(); });
-	cvarManager->registerCvar("whoisbotting_keybind", "", "Keybind name", true, true)
+		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) { pluginEnabled = cvar.getBoolValue(); });
+	cvarManager->registerCvar("whoisbotting_keybind", "F", "Keybind name", true, true)
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
 			std::string newKey = cvar.getStringValue();
 			if (!oldValue.empty()) UnbindKey(oldValue);
@@ -49,40 +42,39 @@ void WhosBottingPlugin::onLoad() {
 			"Function TAGame.GameEvent_Soccar_TA.Destroyed",
 			bind(&WhosBottingPlugin::hk_OnGameEnd, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 		);
-		gameWrapper->HookEventWithCaller<ServerWrapper>(
-			"Function TAGame.GameEvent_Soccar_TA.PostBeginPlay",
-			bind(&WhosBottingPlugin::ClearResults, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-		);
 	}
 
+	// Here we display toasts for all processed replays
+	// TODO: Organize, make replay result a structure
 	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
-		if (!coolEnabled) return;
-		canvas.SetColor(0, 255, 0, 255); // green
-		canvas.SetPosition(Vector2{1720, 50});
-		canvas.DrawString("Enabled", 2, 2);
+		if (replayResultFuture.has_value()) {
+			// Cool trick to check if our future is done yet
+			bool isReady = replayResultFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+			if (isReady) {
+				auto result = replayResultFuture->get();
+				if (result.IsValid()) {
+					std::stringstream stream = {};
+					for (auto [player, percent] : result.playerPercents) {
+						stream << player << ": " << percent << "%" << std::endl;
+					}
+					ShowNotif("Who was botting?", stream.str());
+				} else {
+					ShowError("Replay analysis failed", "Error from server: " + result.errorMsg);
+				}
 
-		if (lastResults.empty()) return;
-		// LOG("draw!");
-		int initial_y = 50;
-		int initial_x = 50;
-		int spacing = 35;
-
-		for (auto result : lastResults) {
-			canvas.SetColor(255, 255, 255, 255); // white
-			canvas.SetPosition(Vector2{initial_x, initial_y});
-			std::string text = std::string(result.first) + ":" + std::to_string(result.second);
-			canvas.DrawString(text, 1.7, 1.7);
-			initial_y += spacing;
+				// Remove optional value
+				replayResultFuture = std::nullopt;
+			}
 		}
 	});
 }
 
 void WhosBottingPlugin::onUnload() {
-	LOG("I was too cool for this world B'(");
+	// ...
 }
 
 void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::string event_name) {
-	if (!coolEnabled) return;
+	if (!pluginEnabled) return;
 	// LOG("plugin is enabled and game was finished/destroyed");
 	//  Ref:
 	//  https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
@@ -110,31 +102,29 @@ void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::st
 
 	LOG(" > Completing replay...");
 	try {
-		constexpr const char* TEMP_EXPORT_PATH = "_wbb_temp_replay_export.replay";
+		constexpr const char* TEMP_EXPORT_PATH = "___wbp_temp_replay_export.replay";
 		soccar_replay.StopRecord();
 		soccar_replay.ExportReplay(std::filesystem::path(TEMP_EXPORT_PATH));
 
-		auto future = std::async(std::launch::async, API::SendReplayToDetector, std::string(TEMP_EXPORT_PATH));
-
-		lastResults = future.get(); // this makes stutter idk why....
+		std::ifstream replayFileStream = std::ifstream(TEMP_EXPORT_PATH, std::ios::binary);
+		std::vector<uint8_t> replayBytes =
+			std::vector<uint8_t>((std::istreambuf_iterator<char>(replayFileStream)), std::istreambuf_iterator<char>());
+		replayFileStream.close();
 		std::filesystem::remove(TEMP_EXPORT_PATH);
 
+		SendReplayAsync(replayBytes);
 	} catch (std::exception& e) {
-		LOG(std::string(" > FAILED to save and submit replay, exception: ") + e.what());
+		ShowError("Replay analysis failed", std::format("Exception thrown during submission: \"{}\"", e.what()));
 		return;
 	}
 
 	LOG(" > Finished processing replay!");
 }
 
-void WhosBottingPlugin::ClearResults(ServerWrapper server, void* params, std::string event_name) {
-	lastResults.clear();
-}
-
 void WhosBottingPlugin::OnKeybindPress() {
 	// interpolated google told me to do this i dont understand this :( sorry i didnt
 	// know how to call hk_on_game_end outside of an hook :(
-	if (!coolEnabled) return;
+	if (!pluginEnabled) return;
 	if (gameWrapper->IsInOnlineGame()) {
 		ServerWrapper sw = gameWrapper->GetOnlineGame();
 		if (!sw) {
@@ -150,6 +140,20 @@ void WhosBottingPlugin::OnKeybindPress() {
 		}
 		hk_OnGameEnd(sw, nullptr, "fake_hook");
 	}
+}
+
+void WhosBottingPlugin::SendReplayAsync(const std::vector<uint8_t>& replayBytes) {
+	replayResultFuture = std::async(std::launch::async, API::SendReplayToDetector, replayBytes);
+}
+
+void WhosBottingPlugin::ShowNotif(std::string title, std::string description, bool isError) {
+	// Force-enable toast notifications
+	if (auto notifCvar = cvarManager->getCvar("cl_notifications_enable_beta")) {
+		notifCvar.setValue(1);
+	}
+
+	constexpr float DURATION = 7.0f;
+	gameWrapper->Toast(title, description, "default", DURATION, isError ? ToastType_Error : ToastType_Info);
 }
 
 void WhosBottingPlugin::BindKey(std::string key) {

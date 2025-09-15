@@ -9,8 +9,13 @@
 #include <imgui/imgui_searchablecombo.h>
 #include <imgui/imgui_stdlib.h>
 
+#include <fstream>
 #include <functional>
+#include <future>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
