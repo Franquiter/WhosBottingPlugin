@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 #include <cpr/cpr.h>
 
-std::map<std::string, int> zealan_api(std::string replay_path) {
+std::map<std::string, int> API::send_replay_to_detector(std::string replay_path) {
     std::ifstream replay(replay_path, std::ios::binary);
 
    std::vector<uint8_t> buffer(

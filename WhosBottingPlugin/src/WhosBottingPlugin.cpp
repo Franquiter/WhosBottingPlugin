@@ -133,7 +133,7 @@ void WhosBottingPlugin::hk_on_game_end(ServerWrapper server, void* params, std::
 
 
 		
-		auto future = std::async(std::launch::async, zealan_api, std::string(TEMP_EXPORT_PATH));
+		auto future = std::async(std::launch::async, API::SendReplayToDetector, std::string(TEMP_EXPORT_PATH));
 
 		last_results_ = future.get();				//this makes stutter idk why....
 		std::filesystem::remove(TEMP_EXPORT_PATH);
