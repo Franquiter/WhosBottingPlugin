@@ -1,5 +1,8 @@
-# BakkesModStarterPlugin
+# WhosBottingPlugin
+#### A [Bakkesmod](https://bakkesplugins.com/) plugin that automatically submits your games to [whosbotting.com](https://whosbotting.com) to detect cheaters.
+*Created by [nixvio64](https://github.com/nixvio64) and [ZealanL](https://github.com/ZealanL), because cheating sucks!*
 
-This is a basic starter plugin for BakkesMod. It's described in the new BakkesMod programming server
+____
 
-[https://discord.gg/XrKqyu3Bjk](https://discord.gg/XrKqyu3Bjk)
+This plugin will automatically detect cheaters in your games both mid-game, and when the game ends.
+The analysis results will be displayed as toast notifications in-game.
