@@ -20,7 +20,7 @@ void WhosBottingPlugin::onLoad()
 	LOG("Hello I'm WhosBottingPlugin B)");
 
 
-	cvarManager->registerCvar("cool_enabled", "0", "Enable Cool", true, true, 0, true, 1)
+	cvarManager->registerCvar("wbp_enabled", "0", "Enable Cool", true, true, 0, true, 1)
 		.addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
 		coolEnabled = cvar.getBoolValue();
 			});

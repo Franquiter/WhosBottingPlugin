@@ -5,7 +5,7 @@ void WhosBottingPlugin::RenderSettings() {
     ImGui::TextUnformatted("A really cool plugin");
     static int selected = 0;
 
-    CVarWrapper enableCvar = cvarManager->getCvar("cool_enabled");
+    CVarWrapper enableCvar = cvarManager->getCvar("wbp_enabled");
     if (!enableCvar) { return; }
     bool enabled = enableCvar.getBoolValue();
     if (ImGui::Checkbox("Enable plugin", &enabled)) {
