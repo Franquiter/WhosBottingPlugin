@@ -75,36 +75,42 @@ void WhosBottingPlugin::onUnload() {
 
 void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::string event_name) {
 	if (!pluginEnabled) return;
-	// LOG("plugin is enabled and game was finished/destroyed");
+
 	//  Ref:
 	//  https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
 
-	ReplayDirectorWrapper replay_director = server.GetReplayDirector();
-	if (!replay_director) return;
+	ReplayDirectorWrapper replayDirector = server.GetReplayDirector();
+	if (!replayDirector) return;
 
-	ReplaySoccarWrapper soccar_replay = replay_director.GetReplay();
-	if (!soccar_replay) return;
+	ReplaySoccarWrapper soccarReplay = replayDirector.GetReplay();
+	if (!soccarReplay) return;
 
-	LOG("Potential replay save initiated from hk_on_game_end()...");
+	if (soccarReplay.GetbFileCorrupted()) {
+		LOG("hk_OnGameEnd(): Skipping corrupted replay");
+		return;
+	}
 
-#if 0
 	constexpr int MIN_FRAMES = 100;
-	if (soccar_replay.GetNumFrames() < MIN_FRAMES) {
-		log(" > Disgarding too-short replay");
+	if (soccarReplay.GetNumFrames() < MIN_FRAMES) {
+		LOG("hk_OnGameEnd(): Skipping replay with only {} frames", soccarReplay.GetNumFrames());
+		return;
+	}
+
+	if (server.IsPlayingTraining()) {
+		LOG("hk_OnGameEnd(): Skipping training replay");
 		return;
 	}
 
 	if (server.GetNumPlayers() < 2) {
-		log(" > Disgarding replay with only ", server.GetNumPlayers(), " player(s)");
+		LOG("hk_OnGameEnd(): Disgarding replay with only ", server.GetNumPlayers(), " player(s)");
 		return;
 	}
-#endif
 
 	LOG(" > Completing replay...");
 	try {
 		constexpr const char* TEMP_EXPORT_PATH = "___wbp_temp_replay_export.replay";
-		soccar_replay.StopRecord();
-		soccar_replay.ExportReplay(std::filesystem::path(TEMP_EXPORT_PATH));
+		soccarReplay.StopRecord();
+		soccarReplay.ExportReplay(std::filesystem::path(TEMP_EXPORT_PATH));
 
 		std::ifstream replayFileStream = std::ifstream(TEMP_EXPORT_PATH, std::ios::binary);
 		std::vector<uint8_t> replayBytes =
