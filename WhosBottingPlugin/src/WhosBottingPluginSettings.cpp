@@ -1,7 +1,7 @@
-#include "pch.h"
-#include "CoolPlugin.h"
+#include "src/framework.h"
+#include "WhosBottingPlugin.h"
 #include "keys.h"
-void CoolPlugin::RenderSettings() {
+void WhosBottingPlugin::RenderSettings() {
     ImGui::TextUnformatted("A really cool plugin");
     static int selected = 0;
 

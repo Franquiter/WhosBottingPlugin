@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "CoolPlugin.h"
+#include "src/framework.h"
+#include "WhosBottingPlugin.h"
 #include "bakkesmod/wrappers/GameWrapper.h"
 #include "bakkesmod/wrappers/canvaswrapper.h"
 #include <map> 
@@ -7,20 +7,17 @@
 #include "api.h"
 #include <future>
 
-
-
-BAKKESMOD_PLUGIN(CoolPlugin, "Cool Plugin", plugin_version, PLUGINTYPE_FREEPLAY)
+BAKKESMOD_PLUGIN(WhosBottingPlugin, "WhosBottingPlugin", plugin_version, PLUGINTYPE_FREEPLAY)
 
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 bool coolEnabled = false;
 
-void CoolPlugin::onLoad()
+void WhosBottingPlugin::onLoad()
 {
 	// This line is required for LOG to work and must be before any use of LOG()
 	_globalCvarManager = cvarManager;
 	// do something when it loads
-	LOG("Hello I'm CoolPlugin B)");
-
+	LOG("Hello I'm WhosBottingPlugin B)");
 
 
 	cvarManager->registerCvar("cool_enabled", "0", "Enable Cool", true, true, 0, true, 1)
@@ -47,7 +44,7 @@ void CoolPlugin::onLoad()
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.EventMatchEnded",
 			bind(
-				&CoolPlugin::hk_on_game_end,
+				&WhosBottingPlugin::hk_on_game_end,
 				this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3
 			)
 		);
@@ -55,14 +52,14 @@ void CoolPlugin::onLoad()
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.Destroyed",
 			bind(
-				&CoolPlugin::hk_on_game_end,
+				&WhosBottingPlugin::hk_on_game_end,
 				this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3
 			)
 		);
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.PostBeginPlay",
 			bind(
-				&CoolPlugin::clear_results,
+				&WhosBottingPlugin::clear_results,
 				this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3
 			)
 		);
@@ -94,12 +91,12 @@ void CoolPlugin::onLoad()
 
 }
 
-void CoolPlugin::onUnload() {
+void WhosBottingPlugin::onUnload() {
 	LOG("I was too cool for this world B'(");
 }
 
 
-void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string event_name) {
+void WhosBottingPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string event_name) {
 	if (!coolEnabled) return;
 	//LOG("plugin is enabled and game was finished/destroyed");
 	// Ref: https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
@@ -151,11 +148,11 @@ void CoolPlugin::hk_on_game_end(ServerWrapper server, void* params, std::string 
 	LOG(" > Finished processing replay!");
 }
 
-void CoolPlugin::clear_results(ServerWrapper server, void* params, std::string event_name) {
+void WhosBottingPlugin::clear_results(ServerWrapper server, void* params, std::string event_name) {
 	last_results_.clear();
 }
 
-void CoolPlugin::onKeybindPress() {   //interpolated google told me to do this i dont understand this :( sorry i didnt know how to call hk_on_game_end outside of an hook :(
+void WhosBottingPlugin::onKeybindPress() {   //interpolated google told me to do this i dont understand this :( sorry i didnt know how to call hk_on_game_end outside of an hook :(
 	if (!coolEnabled) return;
 	if (gameWrapper->IsInOnlineGame()) {
 		ServerWrapper sw = gameWrapper->GetOnlineGame();
@@ -170,13 +167,13 @@ void CoolPlugin::onKeybindPress() {   //interpolated google told me to do this i
 }
 
 
-void CoolPlugin::BindKey(std::string key) {
+void WhosBottingPlugin::BindKey(std::string key) {
 	if (key.empty()) {
 		return;
 	}
 	cvarManager->executeCommand("bind " + key + " whoisbotting_k_pressed");
 }
 
-void CoolPlugin::UnbindKey(std::string key) {
+void WhosBottingPlugin::UnbindKey(std::string key) {
 	cvarManager->executeCommand("unbind " + key);
 }

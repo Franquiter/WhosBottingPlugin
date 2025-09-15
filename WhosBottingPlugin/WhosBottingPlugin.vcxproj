@@ -9,7 +9,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{1c1aa9ac-14d6-4bb3-b3b2-bb84d4e93f3c}</ProjectGuid>
-    <RootNamespace>CoolPlugin</RootNamespace>
+    <RootNamespace>WhosBottingPlugin</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -49,6 +49,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)plugins\</OutDir>
     <IntDir>$(SolutionDir)build\.intermediates\$(Configuration)\</IntDir>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\vcpkg\installed\x64-windows\include;</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -73,12 +74,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>src/pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -92,53 +93,46 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="api.cpp" />
-    <ClCompile Include="CoolPluginSettings.cpp" />
-    <ClCompile Include="imgui\imgui.cpp" />
-    <ClCompile Include="imgui\imguivariouscontrols.cpp" />
-    <ClCompile Include="imgui\imgui_additions.cpp" />
-    <ClCompile Include="imgui\imgui_demo.cpp" />
-    <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="imgui\imgui_rangeslider.cpp" />
-    <ClCompile Include="imgui\imgui_searchablecombo.cpp" />
-    <ClCompile Include="IMGUI\imgui_stdlib.cpp" />
-    <ClCompile Include="imgui\imgui_timeline.cpp" />
-    <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="CoolPlugin.cpp" />
-    <ClCompile Include="GuiBase.cpp" />
+    <ClCompile Include="src\api.cpp" />
+    <ClCompile Include="src\WhosBottingPluginSettings.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imguivariouscontrols.cpp" />
+    <ClCompile Include="src\imgui\imgui_additions.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="src\imgui\imgui_rangeslider.cpp" />
+    <ClCompile Include="src\imgui\imgui_searchablecombo.cpp" />
+    <ClCompile Include="src\imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="src\imgui\imgui_timeline.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\WhosBottingPlugin.cpp" />
+    <ClCompile Include="src\GuiBase.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="api.h" />
-    <ClInclude Include="imgui\imconfig.h" />
-    <ClInclude Include="imgui\imgui.h" />
-    <ClInclude Include="imgui\imguivariouscontrols.h" />
-    <ClInclude Include="imgui\imgui_additions.h" />
-    <ClInclude Include="imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="imgui\imgui_impl_win32.h" />
-    <ClInclude Include="imgui\imgui_internal.h" />
-    <ClInclude Include="imgui\imgui_rangeslider.h" />
-    <ClInclude Include="imgui\imgui_searchablecombo.h" />
-    <ClInclude Include="IMGUI\imgui_stdlib.h" />
-    <ClInclude Include="imgui\imgui_timeline.h" />
-    <ClInclude Include="imgui\imstb_rectpack.h" />
-    <ClInclude Include="imgui\imstb_textedit.h" />
-    <ClInclude Include="imgui\imstb_truetype.h" />
-    <ClInclude Include="Keys.h" />
-    <ClInclude Include="logging.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="GuiBase.h" />
-    <ClInclude Include="CoolPlugin.h" />
-    <ClInclude Include="json.hpp" />
-    <ClInclude Include="version.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="CoolPlugin.rc" />
+    <ClInclude Include="src\api.h" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imguivariouscontrols.h" />
+    <ClInclude Include="src\imgui\imgui_additions.h" />
+    <ClInclude Include="src\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="src\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\imgui_rangeslider.h" />
+    <ClInclude Include="src\imgui\imgui_searchablecombo.h" />
+    <ClInclude Include="src\imgui\imgui_stdlib.h" />
+    <ClInclude Include="src\imgui\imgui_timeline.h" />
+    <ClInclude Include="src\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\Keys.h" />
+    <ClInclude Include="src\logging.h" />
+    <ClInclude Include="src\framework.h" />
+    <ClInclude Include="src\GuiBase.h" />
+    <ClInclude Include="src\WhosBottingPlugin.h" />
+    <ClInclude Include="src\json.hpp" />
+    <ClInclude Include="src\version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

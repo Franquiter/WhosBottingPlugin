@@ -1,9 +1,9 @@
-﻿#include "pch.h"
+﻿#include "src/framework.h"
 #include "GuiBase.h"
 
 std::string SettingsWindowBase::GetPluginName()
 {
-	return "CoolPlugin";
+	return "WhosBottingPlugin";
 }
 
 void SettingsWindowBase::SetImGuiContext(uintptr_t ctx)
@@ -13,7 +13,7 @@ void SettingsWindowBase::SetImGuiContext(uintptr_t ctx)
 
 std::string PluginWindowBase::GetMenuName()
 {
-	return "CoolPlugin";
+	return "WhosBottingPlugin";
 }
 
 std::string PluginWindowBase::GetMenuTitle()

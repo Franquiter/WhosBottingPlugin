@@ -15,7 +15,7 @@ public:
 	virtual ~PluginWindowBase() = default;
 
 	bool isWindowOpen_ = false;
-	std::string menuTitle_ = "CoolPlugin";
+	std::string menuTitle_ = "WhosBottingPlugin";
 
 	std::string GetMenuName() override;
 	std::string GetMenuTitle() override;

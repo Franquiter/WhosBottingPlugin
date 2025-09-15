@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "src/framework.h"
+
 //- Common Code For All Addons needed just to ease inclusion as separate files in user code ----------------------
 #include "imgui.h"
 #undef IMGUI_DEFINE_MATH_OPERATORS

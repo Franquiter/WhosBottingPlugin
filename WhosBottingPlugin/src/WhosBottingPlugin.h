@@ -9,7 +9,7 @@
 constexpr auto plugin_version = stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD);
 
 
-class CoolPlugin: public BakkesMod::Plugin::BakkesModPlugin,
+class WhosBottingPlugin: public BakkesMod::Plugin::BakkesModPlugin,
 	public SettingsWindowBase
 	//,public PluginWindowBase // Uncomment if you want to render your own plugin window
 {
