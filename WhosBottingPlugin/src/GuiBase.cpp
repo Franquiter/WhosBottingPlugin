@@ -15,7 +15,7 @@ std::string PluginWindowBase::GetMenuName() {
 }
 
 std::string PluginWindowBase::GetMenuTitle() {
-	return menuTitle_;
+	return menuTitle;
 }
 
 void PluginWindowBase::SetImGuiContext(uintptr_t ctx) {
@@ -31,15 +31,15 @@ bool PluginWindowBase::IsActiveOverlay() {
 }
 
 void PluginWindowBase::OnOpen() {
-	isWindowOpen_ = true;
+	isWindowOpen = true;
 }
 
 void PluginWindowBase::OnClose() {
-	isWindowOpen_ = false;
+	isWindowOpen = false;
 }
 
 void PluginWindowBase::Render() {
-	if (!ImGui::Begin(menuTitle_.c_str(), &isWindowOpen_, ImGuiWindowFlags_None)) {
+	if (!ImGui::Begin(menuTitle.c_str(), &isWindowOpen, ImGuiWindowFlags_None)) {
 		// Early out if the window is collapsed, as an optimization.
 		ImGui::End();
 		return;
@@ -49,7 +49,7 @@ void PluginWindowBase::Render() {
 
 	ImGui::End();
 
-	if (!isWindowOpen_) {
-		_globalCvarManager->executeCommand("togglemenu " + GetMenuName());
+	if (!isWindowOpen) {
+		g_GlobalCvarManager->executeCommand("togglemenu " + GetMenuName());
 	}
 }

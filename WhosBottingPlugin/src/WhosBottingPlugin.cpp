@@ -11,12 +11,13 @@
 
 BAKKESMOD_PLUGIN(WhosBottingPlugin, "WhosBottingPlugin", plugin_version, PLUGINTYPE_FREEPLAY)
 
-std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
+std::shared_ptr<CVarManagerWrapper> g_GlobalCvarManager;
 bool coolEnabled = false;
 
 void WhosBottingPlugin::onLoad() {
 	// This line is required for LOG to work and must be before any use of LOG()
-	_globalCvarManager = cvarManager;
+	g_GlobalCvarManager = cvarManager;
+
 	// do something when it loads
 	LOG("Hello I'm WhosBottingPlugin B)");
 
@@ -38,8 +39,7 @@ void WhosBottingPlugin::onLoad() {
 		if (!key.empty()) BindKey(key);
 	}
 
-	{ // Hook game ending events like https://github.com/bakkesmodorg/AutoReplayUploader
-	  // does
+	{ // Hook game ending events like https://github.com/bakkesmodorg/AutoReplayUploader does
 		gameWrapper->HookEventWithCaller<ServerWrapper>(
 			"Function TAGame.GameEvent_Soccar_TA.EventMatchEnded",
 			bind(&WhosBottingPlugin::hk_OnGameEnd, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
@@ -153,9 +153,7 @@ void WhosBottingPlugin::OnKeybindPress() {
 }
 
 void WhosBottingPlugin::BindKey(std::string key) {
-	if (key.empty()) {
-		return;
-	}
+	if (key.empty()) return;
 	cvarManager->executeCommand("bind " + key + " whoisbotting_k_pressed");
 }
 

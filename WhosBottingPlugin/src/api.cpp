@@ -16,14 +16,14 @@ std::map<std::string, int> API::SendReplayToDetector(std::string replay_path) {
 
 	std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(replay)), std::istreambuf_iterator<char>());
 
-	auto r = cpr::Post(
+	auto response = cpr::Post(
 		cpr::Url{"https://whosbotting.com/analyze"},
 		cpr::Header{{"Content-Type", "text/plain"}, {"Accept", "application/json"}},
 		cpr::Body{std::string(buffer.begin(), buffer.end())}
 	);
 	std::map<std::string, int> results;
-	if (r.status_code == 200) {
-		json j = json::parse(r.text);
+	if (response.status_code == 200) {
+		json j = json::parse(response.text);
 		// ofstream out("analysis.json", std::ios::binary);
 		// out << j.dump(4);
 		// out.close();
@@ -38,7 +38,7 @@ std::map<std::string, int> API::SendReplayToDetector(std::string replay_path) {
 			// cout<<"Botting confidence: "<<name<<":"<<confidence<<endl;
 		}
 	} else {
-		LOG(std::string("Error:") + std::to_string(r.status_code) + " " + r.error.message);
+		LOG(std::string("Error:") + std::to_string(response.status_code) + " " + response.error.message);
 	}
 
 	return results;

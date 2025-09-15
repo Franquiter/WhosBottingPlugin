@@ -12,8 +12,8 @@ class PluginWindowBase : public BakkesMod::Plugin::PluginWindow {
 public:
 	virtual ~PluginWindowBase() = default;
 
-	bool isWindowOpen_ = false;
-	std::string menuTitle_ = "WhosBottingPlugin";
+	bool isWindowOpen = false;
+	std::string menuTitle = "WhosBottingPlugin";
 
 	std::string GetMenuName() override;
 	std::string GetMenuTitle() override;

@@ -7,7 +7,7 @@
 
 #include "bakkesmod/wrappers/cvarmanagerwrapper.h"
 
-extern std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
+extern std::shared_ptr<CVarManagerWrapper> g_GlobalCvarManager;
 constexpr bool DEBUG_LOG = false;
 
 struct FormatString {
@@ -39,12 +39,12 @@ struct FormatWstring {
 
 template <typename... Args>
 void LOG(std::string_view format_str, Args&&... args) {
-	_globalCvarManager->log(std::vformat(format_str, std::make_format_args(std::forward<Args>(args)...)));
+	g_GlobalCvarManager->log(std::vformat(format_str, std::make_format_args(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
 void LOG(std::wstring_view format_str, Args&&... args) {
-	_globalCvarManager->log(std::vformat(format_str, std::make_wformat_args(std::forward<Args>(args)...)));
+	g_GlobalCvarManager->log(std::vformat(format_str, std::make_wformat_args(std::forward<Args>(args)...)));
 }
 
 template <typename... Args>
@@ -52,7 +52,7 @@ void DEBUGLOG(const FormatString& format_str, Args&&... args) {
 	if constexpr (DEBUG_LOG) {
 		auto text = std::vformat(format_str.str, std::make_format_args(std::forward<Args>(args)...));
 		auto location = format_str.GetLocation();
-		_globalCvarManager->log(std::format("{} {}", text, location));
+		g_GlobalCvarManager->log(std::format("{} {}", text, location));
 	}
 }
 
@@ -61,6 +61,6 @@ void DEBUGLOG(const FormatWstring& format_str, Args&&... args) {
 	if constexpr (DEBUG_LOG) {
 		auto text = std::vformat(format_str.str, std::make_wformat_args(std::forward<Args>(args)...));
 		auto location = format_str.GetLocation();
-		_globalCvarManager->log(std::format(L"{} {}", text, location));
+		g_GlobalCvarManager->log(std::format(L"{} {}", text, location));
 	}
 }
