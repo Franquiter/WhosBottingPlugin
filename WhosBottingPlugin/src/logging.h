@@ -13,6 +13,6 @@ template <typename... Args>
 void LOG(std::string str, Args&&... args) {
 	if (!g_GlobalCvarManager) return;
 
-	std::string formatted = std::vformat(str, std::make_format_args());
+	std::string formatted = std::vformat(str, std::make_format_args(args...));
 	g_GlobalCvarManager->log(formatted);
 }

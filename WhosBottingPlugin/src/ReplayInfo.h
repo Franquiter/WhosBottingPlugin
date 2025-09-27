@@ -3,10 +3,12 @@
 
 struct ReplayInfo {
 	std::string id;
+	std::string date;
 	size_t numFrames;
 
 	ReplayInfo(ReplaySoccarWrapper replay) {
 		id = replay.GetId().ToString();
+		date = replay.GetDate().ToString();
 		numFrames = replay.GetNumFrames();
 	}
 

@@ -72,66 +72,60 @@ void WhosBottingPlugin::onLoad() {
 void WhosBottingPlugin::TrySendReplay(ServerWrapper server, bool isMidGame) {
 	if (!pluginEnabled) return;
 
-	//  Ref:
-	//  https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
-
-	auto soccarReplay = Utils::GetReplayFromServer(server);
-	if (!soccarReplay) return;
-
-	if (soccarReplay.GetbFileCorrupted()) {
-		LOG("TrySendReplay(): Skipping corrupted replay");
-		return;
-	}
-
-	constexpr int MIN_FRAMES = 100;
-	if (soccarReplay.GetNumFrames() < MIN_FRAMES) {
-		LOG("TrySendReplay(): Skipping replay with only {} frames", soccarReplay.GetNumFrames());
-		return;
-	}
-
-	if (server.IsPlayingTraining()) {
-		LOG("TrySendReplay(): Skipping training replay");
-		return;
-	}
-
-	if (server.GetNumPlayers() < 2) {
-		LOG("TrySendReplay(): Disgarding replay with only {} player(s)", server.GetNumPlayers());
-		return;
-	}
-
-	// Prevent sending while a request is still pending
-	// Otherwise, it will lag them because it will forcibly await the previous request
-	if (IsReplaySending()) {
-		LOG("TrySendReplay(): A replay is already sending, ignoring...");
-		return;
-	}
-
-	auto replayInfo = ReplayInfo(soccarReplay);
-	if (replayInfo.id == lastSentCompletedReplayInfo->id) {
-		LOG("TrySendReplay(): Replay already submitted, ignoring...");
-		return;
-	}
 	try {
-		constexpr const char* TEMP_EXPORT_PATH = "___wbp_temp_replay_export.replay";
-		soccarReplay.StopRecord();
-		soccarReplay.ExportReplay(std::filesystem::path(TEMP_EXPORT_PATH));
+		//  Ref:
+		//  https://github.com/bakkesmodorg/AutoReplayUploader/blob/master/AutoReplayUploader/AutoReplayUploaderPlugin.cpp#L295
 
-		std::ifstream replayFileStream = std::ifstream(TEMP_EXPORT_PATH, std::ios::binary);
-		std::vector<uint8_t> replayBytes =
-			std::vector<uint8_t>((std::istreambuf_iterator<char>(replayFileStream)), std::istreambuf_iterator<char>());
-		replayFileStream.close();
-		std::filesystem::remove(TEMP_EXPORT_PATH);
+		auto soccarReplay = Utils::GetReplayFromServer(server);
+		if (!soccarReplay) return;
 
-		SendReplayAsync(replayBytes);
-		LOG("Replay sent successfully!");
+		if (soccarReplay.GetbFileCorrupted()) {
+			LOG("TrySendReplay(): Skipping corrupted replay");
+			return;
+		}
+
+		constexpr int MIN_FRAMES = 100;
+		if (soccarReplay.GetNumFrames() < MIN_FRAMES) {
+			LOG("TrySendReplay(): Skipping replay with only {} frames", soccarReplay.GetNumFrames());
+			return;
+		}
+
+		if (server.IsPlayingTraining()) {
+			LOG("TrySendReplay(): Skipping training replay");
+			return;
+		}
+
+		// Prevent sending while a request is still pending
+		// Otherwise, it will lag them because it will forcibly await the previous request
+		if (IsReplaySending()) {
+			LOG("TrySendReplay(): A replay is already sending, ignoring...");
+			return;
+		}
+
+		try {
+			constexpr const char* TEMP_EXPORT_PATH = "___wbp_temp_replay_export.replay";
+			soccarReplay.StopRecord();
+			soccarReplay.ExportReplay(std::filesystem::path(TEMP_EXPORT_PATH));
+
+			std::ifstream replayFileStream = std::ifstream(TEMP_EXPORT_PATH, std::ios::binary);
+			std::vector<uint8_t> replayBytes =
+				std::vector<uint8_t>((std::istreambuf_iterator<char>(replayFileStream)), std::istreambuf_iterator<char>());
+			replayFileStream.close();
+			std::filesystem::remove(TEMP_EXPORT_PATH);
+
+			SendReplayAsync(replayBytes);
+			LOG("Replay sent successfully!");
+		} catch (std::exception& e) {
+			ShowError("Replay analysis failed", std::format("Exception thrown during submission: \"{}\"", e.what()));
+			return;
+		}
+
+		if (!isMidGame) {
+			// Only if the game is completed
+			lastSentCompletedReplayInfo = ReplayInfo(soccarReplay);
+		}
 	} catch (std::exception& e) {
-		ShowError("Replay analysis failed", std::format("Exception thrown during submission: \"{}\"", e.what()));
-		return;
-	}
-
-	if (!isMidGame) {
-		// Only if the game is completed
-		lastSentCompletedReplayInfo = replayInfo;
+		ShowError("SendReplay() Exception", e.what());
 	}
 }
 
