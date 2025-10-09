@@ -12,9 +12,11 @@
 constexpr auto plugin_version =
 	stringify(VERSION_MAJOR) "." stringify(VERSION_MINOR) "." stringify(VERSION_PATCH) "." stringify(VERSION_BUILD);
 
-class WhosBottingPlugin : public BakkesMod::Plugin::BakkesModPlugin, public SettingsWindowBase {
+class WhosBottingPlugin : public BakkesMod::Plugin::BakkesModPlugin, public SettingsWindowBase, public PluginWindowBase {
 private:
 	void onLoad() override;
+
+	void RenderWindow() override;
 
 	void TrySendReplay(ServerWrapper server, bool isMidGame);
 	void BindKey(std::string key);

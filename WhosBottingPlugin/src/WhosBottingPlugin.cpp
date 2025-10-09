@@ -43,6 +43,21 @@ void WhosBottingPlugin::onLoad() {
 			"Function TAGame.GameEvent_Soccar_TA.Destroyed",
 			bind(&WhosBottingPlugin::hk_OnGameLeft, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
 		);
+		//Hook game onscoreboard events (inspired by) https://github.com/BenTheDan/IngameRank  
+		gameWrapper->HookEvent(
+			"Function TAGame.GFxData_GameEvent_TA.OnOpenScoreboard", 
+			[this](std::string eventName) {
+			if (!isWindowOpen) {
+				g_GlobalCvarManager->executeCommand("togglemenu " + GetMenuName());
+			}
+		}
+		);
+		gameWrapper->HookEvent(
+			"Function TAGame.GFxData_GameEvent_TA.OnCloseScoreboard", 
+			[this](std::string eventName) {
+			g_GlobalCvarManager->executeCommand("togglemenu " + GetMenuName());
+		}
+		);
 	}
 
 	// Here we display toasts for all processed replays
@@ -177,4 +192,15 @@ void WhosBottingPlugin::BindKey(std::string key) {
 
 void WhosBottingPlugin::UnbindKey(std::string key) {
 	cvarManager->executeCommand("unbind " + key);
+}
+
+void WhosBottingPlugin::RenderWindow() {
+	// using percentages cause direct coords might fuck up on different resolutions
+	ImGuiIO& io = ImGui::GetIO();
+	float screenWidth = io.DisplaySize.x;
+	float screenHeight = io.DisplaySize.y;
+
+	
+	ImGui::SetCursorPos(ImVec2(screenWidth * 0.1f, screenHeight * 0.2f)); //now uses percentage and it shouldn't break (as much)
+	ImGui::Text("WhosBotting Plugin%");
 }
