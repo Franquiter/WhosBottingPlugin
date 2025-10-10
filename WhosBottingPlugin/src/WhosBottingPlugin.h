@@ -44,7 +44,7 @@ private:
 	void ShowError(std::string title, std::string description) {
 		ShowNotif(title, description, true);
 	}
-	void PollEvery5S();
+	void PollEveryS();
 
 	struct LastResult {
 		std::map<std::string, int> playerPercents;

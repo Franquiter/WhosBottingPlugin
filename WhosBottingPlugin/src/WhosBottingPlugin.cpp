@@ -59,7 +59,7 @@ void WhosBottingPlugin::onLoad() {
 		}
 		);
 	}
-	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEvery5S(); }, 5.0f);
+	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEveryS(); }, 20.0f);
 	// Here we display toasts for all processed replays
 	// TODO: Organize, make replay result a structure
 }
@@ -177,8 +177,8 @@ void WhosBottingPlugin::UnbindKey(std::string key) {
 }
 
 
-void WhosBottingPlugin::PollEvery5S() {
-	LOG("PollEvery5S() called, pluginEnabled: {}", pluginEnabled);
+void WhosBottingPlugin::PollEveryS() {
+	LOG("PollEveryS() called, pluginEnabled: {}", pluginEnabled);
 	if (!pluginEnabled) return;
 
 	ServerWrapper server = gameWrapper->GetOnlineGame();
@@ -188,7 +188,7 @@ void WhosBottingPlugin::PollEvery5S() {
 	} else {
 		LOG("No online game found (GetOnlineGame returned null)");
 	}
-	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEvery5S(); }, 5.0f);
+	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEveryS(); }, 20.0f);
 }
 
 
@@ -245,4 +245,4 @@ void WhosBottingPlugin::RenderWindow() {
 	} else {
 		ImGui::Text("No results yet.");
 	}
-}
+}	
