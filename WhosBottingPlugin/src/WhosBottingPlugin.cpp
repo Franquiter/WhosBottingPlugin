@@ -59,29 +59,9 @@ void WhosBottingPlugin::onLoad() {
 		}
 		);
 	}
-
+	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEvery5S(); }, 5.0f);
 	// Here we display toasts for all processed replays
 	// TODO: Organize, make replay result a structure
-	gameWrapper->RegisterDrawable([this](CanvasWrapper canvas) {
-		if (replaySendState.has_value()) {
-			// Cool trick to check if our future is done yet
-			if (!IsReplaySending()) {
-				auto result = replaySendState->resultFuture.get();
-				if (result.IsValid()) {
-					std::stringstream stream = {};
-					for (auto [player, percent] : result.playerPercents) {
-						stream << player << ": " << percent << "%" << std::endl;
-					}
-					ShowNotif("Who was botting?", stream.str());
-				} else {
-					ShowError("Replay analysis failed", "Error from server: " + result.errorMsg);
-				}
-
-				// Remove optional value
-				replaySendState = std::nullopt;
-			}
-		}
-	});
 }
 
 void WhosBottingPlugin::TrySendReplay(ServerWrapper server, bool isMidGame) {
@@ -144,6 +124,7 @@ void WhosBottingPlugin::TrySendReplay(ServerWrapper server, bool isMidGame) {
 	}
 }
 
+//remove later
 void WhosBottingPlugin::OnKeybindPress() {
 	if (!pluginEnabled) return;
 
@@ -174,7 +155,7 @@ void WhosBottingPlugin::hk_OnGameEnd(ServerWrapper server, void* params, std::st
 void WhosBottingPlugin::hk_OnGameLeft(ServerWrapper server, void* params, std::string eventName) {
 	TrySendReplay(server, false);
 }
-
+//remove later
 void WhosBottingPlugin::ShowNotif(std::string title, std::string description, bool isError) {
 	// Force-enable toast notifications
 	if (auto notifCvar = cvarManager->getCvar("cl_notifications_enabled_beta")) {
@@ -185,14 +166,54 @@ void WhosBottingPlugin::ShowNotif(std::string title, std::string description, bo
 	gameWrapper->Toast(title, description, "default", DURATION, isError ? ToastType_Error : ToastType_Info);
 }
 
+//remove later
 void WhosBottingPlugin::BindKey(std::string key) {
 	if (key.empty()) return;
 	cvarManager->executeCommand("bind " + key + " whoisbotting_k_pressed");
 }
-
+//remove later
 void WhosBottingPlugin::UnbindKey(std::string key) {
 	cvarManager->executeCommand("unbind " + key);
 }
+
+
+void WhosBottingPlugin::PollEvery5S() {
+	LOG("PollEvery5S() called, pluginEnabled: {}", pluginEnabled);
+	if (!pluginEnabled) return;
+
+	ServerWrapper server = gameWrapper->GetOnlineGame();
+	if (server) {
+		LOG("Server found, calling TrySendReplay");
+		TrySendReplay(server, true);
+	} else {
+		LOG("No online game found (GetOnlineGame returned null)");
+	}
+	gameWrapper->SetTimeout([this](GameWrapper* gw) { PollEvery5S(); }, 5.0f);
+}
+
+
+void WhosBottingPlugin::ReturnLast() {
+	if (replaySendState.has_value()) {
+		// Cool trick to check if our future is done yet
+		if (!IsReplaySending()) {
+			auto result = replaySendState->resultFuture.get();
+			if (result.IsValid()) {
+				lastResult.playerPercents = result.playerPercents;
+				lastResult.isValid = true;
+				lastResult.errorMsg = "";
+				lastResult.hasData = true;
+
+			} else {
+				lastResult.isValid = false;
+				lastResult.errorMsg = result.errorMsg;
+				lastResult.hasData = true;
+			}
+			replaySendState = std::nullopt;
+		}
+	}
+
+}
+
 
 void WhosBottingPlugin::RenderWindow() {
 	// using percentages cause direct coords might fuck up on different resolutions
@@ -200,7 +221,28 @@ void WhosBottingPlugin::RenderWindow() {
 	float screenWidth = io.DisplaySize.x;
 	float screenHeight = io.DisplaySize.y;
 
-	
+
+	ReturnLast();
+
+
 	ImGui::SetCursorPos(ImVec2(screenWidth * 0.1f, screenHeight * 0.2f)); //now uses percentage and it shouldn't break (as much)
-	ImGui::Text("WhosBotting Plugin%");
+
+
+	if (lastResult.hasData) {
+
+		if (lastResult.isValid) {
+			ImGui::Text("Who is botting?");
+			for (const auto& [player, percent] : lastResult.playerPercents) {
+				ImGui::SetCursorPosX(screenWidth * 0.1f);
+				ImGui::Text("%s: %d%%", player.c_str(), percent);
+
+			}
+
+		} else {
+			ImGui::Text("Error: %s", lastResult.errorMsg.c_str());
+		
+		}
+	} else {
+		ImGui::Text("No results yet.");
+	}
 }

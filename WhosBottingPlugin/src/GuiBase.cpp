@@ -43,7 +43,7 @@ void PluginWindowBase::Render() {
 	ImGui::SetNextWindowPos(ImVec2(0, 0)); //this is top left corner origin of display 
 
 	ImGui::SetNextWindowSize(io.DisplaySize); //i now set this to be size of the display so i can later draw text in arbitrary position
-
+	
 	if (!ImGui::Begin(
 			menuTitle.c_str(),
 			&isWindowOpen,
@@ -51,7 +51,8 @@ void PluginWindowBase::Render() {
 				ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground |
 				ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus |
 				ImGuiWindowFlags_NoInputs
-		 )) {
+		 ))
+	{
 		// Early out if the window is collapsed, as an optimization.
 		ImGui::End();
 		return;

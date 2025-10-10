@@ -44,6 +44,18 @@ private:
 	void ShowError(std::string title, std::string description) {
 		ShowNotif(title, description, true);
 	}
+	void PollEvery5S();
+
+	struct LastResult {
+		std::map<std::string, int> playerPercents;
+		bool isValid = false;
+		std::string errorMsg = "";
+		bool hasData = false;
+	};
+
+	LastResult lastResult;
+
+	void ReturnLast();
 
 public:
 	void RenderSettings() override; // Uncomment if you wanna render your own tab in the settings menu
