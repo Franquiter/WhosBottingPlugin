@@ -5,7 +5,7 @@
 
 ### To do:
 - [ ] Improve GUI
-- [ ] Replace manual keybind refresh with auto-refresh (call API every 20s)
+- [x] Replace manual keybind refresh with auto-refresh (call API every 20s)
 ____
 
 This plugin will automatically detect cheaters in your games both mid-game, and when the game ends.
