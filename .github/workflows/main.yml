@@ -10,36 +10,43 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download and Fix SDK Path
+    - name: Force BakkesMod SDK Structure
       shell: pwsh
       run: |
-        # Bajamos el SDK oficial
-        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
+        # 1. Bajamos el SDK completo
+        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_source
         
-        # Creamos la ruta exacta que pide el compilador
-        $targetPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $targetPath
+        # 2. Creamos la carpeta EXACTA que pide tu log (D:\...\sdk\bakkesmodsdk\include)
+        $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $includePath
         
-        # Buscamos todos los archivos .h en el SDK y los movemos al destino
-        # Esto soluciona el error de "path does not exist"
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $targetPath
+        # 3. Buscamos TODOS los archivos .h en el SDK y los metemos ahí
+        # Esto soluciona los 17 errores C1083 de un solo golpe
+        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
         
-        # Guardamos la ruta para el compilador
-        echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
+        # 4. Establecemos la variable de entorno para MSBuild
+        $fullPath = (Get-Item .).FullName + "\sdk"
+        echo "BAKKESMOD_SDK=$fullPath" >> $env:GITHUB_ENV
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión para que no falle el script de powershell
+        # Creamos el archivo de versión manual para que no falle el script
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
-        # Compilamos omitiendo los eventos de pre/post-build que dan error
-        msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent= /p:PostBuildEvent=
+        
+        # Compilamos desactivando los eventos que están rompiendo el proceso
+        msbuild WhosBottingPlugin.sln `
+          /p:Configuration=Release `
+          /p:Platform="x64" `
+          /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" `
+          /p:PreBuildEvent= `
+          /p:PostBuildEvent=
 
     - name: Upload Artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: Plugin-Final
+        name: WhosBotting-Plugin-DLL
         path: |
           **/*.dll
           **/*.set
