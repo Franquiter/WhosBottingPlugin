@@ -13,31 +13,34 @@ jobs:
     - name: Construct SDK Hierarchy
       shell: pwsh
       run: |
-        # 1. Descargar SDK limpio
-        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
+        # 1. Descargar los Headers oficiales del SDK (este sí los tiene)
+        git clone https://github.com/bakkesmodorg/BakkesMod2-SDK.git sdk_temp
         
         # 2. Crear la ruta exacta que pide el error C1083
-        # El compilador busca en: sdk/bakkesmodsdk/include
-        # El código pide: bakkesmod/plugin/archivo.h
-        $finalDir = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        $includeRoot = "sdk/bakkesmodsdk/include"
+        $finalDir = "$includeRoot/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $finalDir
         
-        # 3. Mover TODOS los archivos .h encontrados al fondo de esa ruta
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
+        # 3. Mover los headers (.h) a sus lugares correspondientes
+        # Copiamos la carpeta 'bakkesmod' entera si existe en el SDK, o los archivos sueltos
+        if (Test-Path "sdk_temp/include/bakkesmod") {
+            Copy-Item -Path "sdk_temp/include/bakkesmod/*" -Destination "$includeRoot/bakkesmod" -Recurse -Force
+        } else {
+            Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
+        }
         
-        # 4. Verificación crítica (Esto debe mostrar archivos en el log)
-        Write-Host "--- ARCHIVOS ENCONTRADOS EN LA RUTA FINAL ---"
-        Get-ChildItem -Path $finalDir | Select-Object Name
+        # 4. Verificación crítica (AQUÍ DEBE APARECER bakkesmodplugin.h)
+        Write-Host "--- BUSCANDO bakkesmodplugin.h ---"
+        Get-ChildItem -Path $includeRoot -Filter "bakkesmodplugin.h" -Recurse | Select-Object FullName
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Asegurar version.h en la carpeta del proyecto
+        # Asegurar version.h
         $projPath = "WhosBottingPlugin/WhosBottingPlugin/version.h"
         if (!(Test-Path "WhosBottingPlugin/WhosBottingPlugin")) { $projPath = "WhosBottingPlugin/version.h" }
         New-Item -ItemType File -Path $projPath -Force -Value ""
         
-        # Obtener ruta absoluta para evitar confusiones de MSBuild
         $absPath = (Get-Item .).FullName
         
         msbuild WhosBottingPlugin.sln `
