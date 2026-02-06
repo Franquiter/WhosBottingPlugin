@@ -19,7 +19,7 @@ jobs:
         $cprPath = "$includeBase/cpr"
         New-Item -ItemType Directory -Force -Path "$bmPath/plugin", "$bmPath/wrappers", $cprPath
 
-        # --- MOCK DE BAKKESMOD (Aumentado) ---
+        # --- MOCK DE BAKKESMOD ---
         $headerFile = "$bmPath/plugin/bakkesmodplugin.h"
         '#pragma once' | Set-Content $headerFile
         '#include <string>' | Add-Content $headerFile
@@ -36,14 +36,14 @@ jobs:
         '} }' | Add-Content $headerFile
         'using namespace BakkesMod::Plugin;' | Add-Content $headerFile
         
-        # Copiar a todas las rutas que el compilador busca
         $others = @("plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
         foreach ($f in $others) { Copy-Item $headerFile "$bmPath/$f" -Force }
 
-        # --- MOCK DE CPR (Con Timeouts) ---
+        # --- MOCK DE CPR ---
         $cprFile = "$cprPath/cpr.h"
         '#pragma once' | Set-Content $cprFile
         '#include <string>' | Add-Content $cprFile
+        '#include <initializer_list>' | Add-Content $cprFile
         'namespace cpr { ' | Add-Content $cprFile
         '  struct Response { int status_code; std::string text; std::string error; };' | Add-Content $cprFile
         '  struct Url { Url(std::string u) : url(u) {} std::string url; };' | Add-Content $cprFile
@@ -55,10 +55,8 @@ jobs:
         '  template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
         '}' | Add-Content $cprFile
 
-        # Archivo de versión
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
 
-        # Directory.Build.props (Sin cambios, ya funcionaba)
         $absPath = (Get-Item .).FullName
         $propsFile = "Directory.Build.props"
         '<Project><PropertyGroup>' | Set-Content $propsFile
