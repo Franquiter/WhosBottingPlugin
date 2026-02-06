@@ -13,34 +13,37 @@ jobs:
     - name: Force BakkesMod SDK Structure
       shell: pwsh
       run: |
-        # 1. Bajamos el SDK completo
+        # 1. Bajamos el SDK
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_source
         
-        # 2. Creamos la carpeta EXACTA que pide tu log (D:\...\sdk\bakkesmodsdk\include)
-        $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $includePath
+        # 2. Creamos la estructura que el COMPILADOR quiere (según tu log)
+        $includeBase = "sdk/bakkesmodsdk/include"
+        New-Item -ItemType Directory -Force -Path "$includeBase/bakkesmod/plugin"
         
-        # 3. Buscamos TODOS los archivos .h en el SDK y los metemos ahí
-        # Esto soluciona los 17 errores C1083 de un solo golpe
-        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
+        # 3. Copiamos los archivos .h a esa ruta específica
+        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination "$includeBase/bakkesmod/plugin" -Force
         
-        # 4. Establecemos la variable de entorno para MSBuild
+        # 4. TRUCO FINAL: Copiamos los mismos archivos un nivel arriba por si acaso
+        Copy-Item -Path "$includeBase/bakkesmod/plugin/*" -Destination "$includeBase" -Force
+        
+        # 5. Guardamos la ruta absoluta
         $fullPath = (Get-Item .).FullName + "\sdk"
         echo "BAKKESMOD_SDK=$fullPath" >> $env:GITHUB_ENV
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión manual para que no falle el script
+        # Creamos el archivo de versión manual
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
         
-        # Compilamos desactivando los eventos que están rompiendo el proceso
+        # Compilamos forzando la ruta del SDK
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
           /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" `
           /p:PreBuildEvent= `
-          /p:PostBuildEvent=
+          /p:PostBuildEvent= `
+          /p:IncludePath="${{ env.BAKKESMOD_SDK }}\bakkesmodsdk\include"
 
     - name: Upload Artifact
       if: always()
