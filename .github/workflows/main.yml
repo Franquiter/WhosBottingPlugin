@@ -1,0 +1,17 @@
+name: Build Plugin
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+    - name: Build Solution
+      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Plugin-DLL
+        path: "**/WhosBottingPlugin.dll"
