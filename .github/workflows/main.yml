@@ -13,25 +13,29 @@ jobs:
     - name: Construct SDK Hierarchy
       shell: pwsh
       run: |
-        # 1. Descargar los Headers oficiales del SDK (este sí los tiene)
-        git clone https://github.com/bakkesmodorg/BakkesMod2-SDK.git sdk_temp
+        # 1. Descargar el SDK oficial desde el sitio de BakkesMod
+        $sdkUrl = "https://github.com/bakkesmodorg/BakkesMod2-Plugins/archive/refs/heads/master.zip"
+        Invoke-WebRequest -Uri $sdkUrl -OutFile "sdk.zip"
+        Expand-Archive -Path "sdk.zip" -DestinationPath "sdk_temp"
         
-        # 2. Crear la ruta exacta que pide el error C1083
+        # 2. Definir rutas (basadas en lo que MSBuild busca en tu log)
         $includeRoot = "sdk/bakkesmodsdk/include"
         $finalDir = "$includeRoot/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $finalDir
         
-        # 3. Mover los headers (.h) a sus lugares correspondientes
-        # Copiamos la carpeta 'bakkesmod' entera si existe en el SDK, o los archivos sueltos
-        if (Test-Path "sdk_temp/include/bakkesmod") {
-            Copy-Item -Path "sdk_temp/include/bakkesmod/*" -Destination "$includeRoot/bakkesmod" -Recurse -Force
-        } else {
-            Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
-        }
+        # 3. Mover los archivos .h de la carpeta extraída
+        # Buscamos en la carpeta extraída (que suele tener el nombre del repo-master)
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
         
-        # 4. Verificación crítica (AQUÍ DEBE APARECER bakkesmodplugin.h)
-        Write-Host "--- BUSCANDO bakkesmodplugin.h ---"
-        Get-ChildItem -Path $includeRoot -Filter "bakkesmodplugin.h" -Recurse | Select-Object FullName
+        # 4. TRUCO FINAL: Si el archivo bakkesmodplugin.h sigue faltando, 
+        # lo descargamos individualmente desde el mirror público
+        if (!(Test-Path "$finalDir/bakkesmodplugin.h")) {
+          $rawUrl = "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin/bakkesmodplugin.h"
+          Invoke-WebRequest -Uri $rawUrl -OutFile "$finalDir/bakkesmodplugin.h"
+        }
+
+        Write-Host "--- VERIFICACIÓN DE ARCHIVOS ---"
+        ls $finalDir
 
     - name: Build Solution
       shell: pwsh
