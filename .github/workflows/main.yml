@@ -10,42 +10,40 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Force SDK Structure
+    - name: Construct SDK Hierarchy
       shell: pwsh
       run: |
-        # 1. Clonar el SDK oficial
+        # 1. Descargar SDK limpio
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Definir la ruta base que espera el compilador (absoluta)
-        $baseDir = (Get-Item .).FullName
-        $includePath = "$baseDir\sdk\bakkesmodsdk\include\bakkesmod\plugin"
+        # 2. Crear la ruta exacta que pide el error C1083
+        # El compilador busca en: sdk/bakkesmodsdk/include
+        # El código pide: bakkesmod/plugin/archivo.h
+        $finalDir = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $finalDir
         
-        # 3. Crear las carpetas una por una para asegurar éxito
-        if (!(Test-Path $includePath)) { 
-            New-Item -ItemType Directory -Force -Path $includePath 
-        }
+        # 3. Mover TODOS los archivos .h encontrados al fondo de esa ruta
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
         
-        # 4. Copiar TODOS los .h desde el clon a la subcarpeta final
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
-        
-        # Verificación visual: Si esto no muestra archivos, el build fallará
-        Write-Host "Archivos en $includePath :"
-        ls $includePath
+        # 4. Verificación crítica (Esto debe mostrar archivos en el log)
+        Write-Host "--- ARCHIVOS ENCONTRADOS EN LA RUTA FINAL ---"
+        Get-ChildItem -Path $finalDir | Select-Object Name
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Crear version.h en la subcarpeta del código fuente
-        $vPath = "WhosBottingPlugin/version.h"
-        New-Item -ItemType File -Path $vPath -Force -Value ""
+        # Asegurar version.h en la carpeta del proyecto
+        $projPath = "WhosBottingPlugin/WhosBottingPlugin/version.h"
+        if (!(Test-Path "WhosBottingPlugin/WhosBottingPlugin")) { $projPath = "WhosBottingPlugin/version.h" }
+        New-Item -ItemType File -Path $projPath -Force -Value ""
         
-        $baseDir = (Get-Item .).FullName
+        # Obtener ruta absoluta para evitar confusiones de MSBuild
+        $absPath = (Get-Item .).FullName
         
-        # Compilar forzando el BakkesModPath absoluto
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
-          /p:BakkesModPath="$baseDir\sdk" `
+          /p:BakkesModPath="$absPath\sdk" `
           /p:PreBuildEvent= `
           /p:PostBuildEvent=
 
