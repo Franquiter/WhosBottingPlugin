@@ -10,37 +10,42 @@ jobs:
       with:
         path: plugin_code
 
-    - name: Checkout BakkesMod SDK (Full Headers)
-      uses: actions/checkout@v4
-      with:
-        repository: thelooter/bakkesmodapi
-        path: sdk_folder
-
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Prepare SDK and Version
+    - name: Download and Force SDK
       shell: pwsh
       run: |
-        # 1. Crear la ruta exacta: sdk/bakkesmodsdk/include/bakkesmod/plugin
+        # 1. Crear estructura de carpetas
         $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $includePath
         
-        # 2. Copiar los headers desde el nuevo repo (este tiene los archivos base)
-        # Primero intentamos copiar la estructura completa de headers
-        if (Test-Path "sdk_folder/include/bakkesmod") {
-            Copy-Item -Path "sdk_folder/include/bakkesmod/*" -Destination "sdk/bakkesmodsdk/include/bakkesmod" -Recurse -Force
+        # 2. Descargar Headers desde un Mirror estable (ZIP)
+        $url = "https://github.com/bakkesmodorg/BakkesMod2-Plugins/archive/refs/heads/master.zip"
+        Invoke-WebRequest -Uri $url -OutFile "sdk.zip"
+        Expand-Archive -Path "sdk.zip" -DestinationPath "sdk_temp" -Force
+        
+        # 3. Copiar archivos .h de los ejemplos
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
+        
+        # 4. DESCARGA MANUAL DE LOS ARCHIVOS BASE (Los que faltaban)
+        # Bajamos directamente los headers esenciales del repo oficial de desarrollo
+        $baseRawUrl = "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin"
+        $files = @("bakkesmodplugin.h", "bakkesmodsdk.h", "PluginSettingsWindow.h", "bakkesmodplugin.h")
+        
+        foreach ($file in $files) {
+            try {
+                Invoke-WebRequest -Uri "$baseRawUrl/$file" -OutFile "$includePath/$file" -ErrorAction SilentlyContinue
+            } catch {
+                Write-Host "No se pudo bajar $file de la primera fuente, intentando secundaria..."
+            }
         }
-        
-        # 3. Asegurar que los archivos específicos estén en /plugin/ por si acaso
-        Get-ChildItem -Path "sdk_folder" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
-        
-        # 4. Crear version.h para el plugin
-        New-Item -ItemType File -Path "plugin_code/WhosBottingPlugin/version.h" -Force -Value ""
-        New-Item -ItemType File -Path "plugin_code/version.h" -Force -Value ""
 
-        Write-Host "--- LISTA DE HEADERS ENCONTRADOS ---"
-        Get-ChildItem -Path "sdk/bakkesmodsdk/include" -Filter *.h -Recurse | Select-Object Name
+        # 5. Crear version.h
+        New-Item -ItemType File -Path "plugin_code/WhosBottingPlugin/version.h" -Force -Value ""
+        
+        Write-Host "--- VERIFICACIÓN FINAL DE ARCHIVOS ---"
+        ls $includePath
 
     - name: Build Solution
       shell: pwsh
