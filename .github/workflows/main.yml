@@ -11,14 +11,17 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Download BakkesMod SDK
+      shell: pwsh
       run: |
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk
         echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
 
     - name: Build Solution
+      shell: pwsh
       run: |
-        # Creamos el archivo de versión manualmente para evitar que falle el script de powershell
+        # Creamos el archivo de versión manualmente para evitar el error del script
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
+        # Ejecutamos la compilación desactivando el PreBuildEvent que da error
         msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent=
 
     - name: Upload Artifact
