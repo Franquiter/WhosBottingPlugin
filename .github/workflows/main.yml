@@ -13,13 +13,13 @@ jobs:
     - name: Download BakkesMod SDK
       run: |
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk
-        echo "BAKKESMOD_SDK=$(pwd)/sdk" >> $GITHUB_ENV
+        echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
 
     - name: Build Solution
       run: |
-        # Creamos un archivo de version vacio para evitar el error del script de powershell
-        echo "" > WhosBottingPlugin/version.h
-        msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}"
+        # Creamos el archivo de versión manualmente para evitar que falle el script de powershell
+        New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
+        msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent=
 
     - name: Upload Artifact
       if: always()
