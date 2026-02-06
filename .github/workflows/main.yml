@@ -29,10 +29,10 @@ jobs:
         '#include <chrono>' | Add-Content $headerFile
         '#define BAKKESMOD_PLUGIN_API __declspec(dllexport)' | Add-Content $headerFile
         'namespace BakkesMod { namespace Plugin { ' | Add-Content $headerFile
-        '  class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string v); bool operator!() const { return false; } };' | Add-Content $headerFile
-        '  class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string n); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds="", bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };' | Add-Content $headerFile
-        '  class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };' | Add-Content $headerFile
-        '  class BakkesModPlugin { public: std::shared_ptr<GameWrapper> gameWrapper; std::shared_ptr<CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; };' | Add-Content $headerFile
+        'class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string v); bool operator!() const { return false; } };' | Add-Content $headerFile
+        'class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string n); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds="", bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };' | Add-Content $headerFile
+        'class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };' | Add-Content $headerFile
+        'class BakkesModPlugin { public: std::shared_ptr<GameWrapper> gameWrapper; std::shared_ptr<CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; };' | Add-Content $headerFile
         '} }' | Add-Content $headerFile
         'using namespace BakkesMod::Plugin;' | Add-Content $headerFile
         
@@ -44,11 +44,12 @@ jobs:
         '#pragma once' | Set-Content $cprFile
         '#include <string>' | Add-Content $cprFile
         '#include <initializer_list>' | Add-Content $cprFile
+        '#include <utility>' | Add-Content $cprFile
         'namespace cpr { ' | Add-Content $cprFile
         '  struct Response { int status_code; std::string text; std::string error; };' | Add-Content $cprFile
         '  struct Url { Url(std::string u) : url(u) {} std::string url; };' | Add-Content $cprFile
         '  struct Body { Body(std::string b) : body(b) {} std::string body; };' | Add-Content $cprFile
-        '  struct Header { Header(std::initializer_list<std::pair<const std::string, std::string>> l) {} };' | Add-Content $cprFile
+        '  struct Header { Header(std::initializer_list<std::pair<std::string, std::string>> l) {} };' | Add-Content $cprFile
         '  struct Timeout { Timeout(long m) {} };' | Add-Content $cprFile
         '  struct ConnectTimeout { ConnectTimeout(long m) {} };' | Add-Content $cprFile
         '  template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
