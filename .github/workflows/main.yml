@@ -16,13 +16,13 @@ jobs:
         # Bajamos el SDK oficial
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # Creamos la ruta exacta que tu log de error pedía
+        # Creamos la ruta exacta que pide el compilador
         $targetPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $targetPath
         
-        # Copiamos los archivos desde la carpeta 'include' del SDK descargado
-        # Aquí es donde estaba el truco: la carpeta se llama 'include' en el origen
-        cp sdk_temp/include/bakkesmod/plugin/* $targetPath/
+        # Buscamos todos los archivos .h en el SDK y los movemos al destino
+        # Esto soluciona el error de "path does not exist"
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $targetPath
         
         # Guardamos la ruta para el compilador
         echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
@@ -30,7 +30,9 @@ jobs:
     - name: Build Solution
       shell: pwsh
       run: |
+        # Creamos el archivo de versión para que no falle el script de powershell
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
+        # Compilamos omitiendo los eventos de pre/post-build que dan error
         msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent= /p:PostBuildEvent=
 
     - name: Upload Artifact
