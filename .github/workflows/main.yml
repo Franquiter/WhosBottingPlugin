@@ -19,7 +19,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path "$base/wrappers"
         New-Item -ItemType Directory -Force -Path "$base/wrappers/GameObject"
 
-        # 1. Definición Maestra de Clases (Para evitar que el compilador se detenga)
+        # 1. Definición Maestra con Funciones Comunes
         $masterHeader = @"
         #pragma once
         #include <string>
@@ -29,8 +29,22 @@ jobs:
 
         #define BAKKESMOD_PLUGIN_API __declspec(dllexport)
 
-        class CVarManagerWrapper { public: void log(std::string t); };
-        class GameWrapper { public: void HookEvent(std::string e, void* f); };
+        // Definiciones de tipos para evitar errores de compilación
+        class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); };
+        class CVarManagerWrapper { 
+        public: 
+            void log(std::string t); 
+            CVarWrapper getCVar(std::string name);
+            CVarWrapper registerCvar(std::string name, std::string defaultVal, std::string desc = "", bool searchAble = true, bool hasMin = false, float min = 0, bool hasMax = false, float max = 0, bool save = true);
+        };
+        class GameWrapper { 
+        public: 
+            void HookEvent(std::string e, void* f); 
+            void UnhookEvent(std::string e);
+            void Execute(void* f);
+            bool IsInGame();
+            bool IsInOnlineGame();
+        };
         class BakkesModPlugin { 
         public: 
             std::shared_ptr<GameWrapper> gameWrapper; 
@@ -39,24 +53,29 @@ jobs:
             virtual void onUnload() = 0; 
         };
         class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; };
+        class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; };
         "@
 
-        # 2. Crear todos los archivos que el compilador busque apuntando al Maestro
+        # 2. Generar todos los archivos necesarios apuntando al maestro
         $files = @(
             "plugin/bakkesmodplugin.h", "plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h",
             "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h",
             "wrappers/wrapperstructs.h", "wrappers/arraywrapper.h", "wrappers/cvarwrapper.h",
-            "wrappers/linewrapper.h", "wrappers/mmrwrapper.h"
+            "wrappers/linewrapper.h", "wrappers/mmrwrapper.h", "wrappers/Engine/ActorWrapper.h",
+            "wrappers/GameObject/StatsWrapper.h", "wrappers/GameObject/RumblePickups/RumblePickupComponentWrapper.h"
         )
 
         foreach ($f in $files) {
-            Set-Content -Path "$base/$f" -Value $masterHeader
+            $fullPath = "$base/$f"
+            $dir = Split-Path $fullPath
+            if (!(Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir }
+            Set-Content -Path $fullPath -Value $masterHeader
         }
 
-        # 3. Crear version.h
+        # 3. Crear version.h vacío
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value ""
         
-        Write-Host "--- OMNI-MOCK SDK CREADO ---"
+        Write-Host "--- OMNI-MOCK SDK V2 CREADO ---"
 
     - name: Build Solution
       shell: pwsh
