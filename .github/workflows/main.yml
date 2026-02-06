@@ -6,10 +6,19 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
+
+    - name: Restore packages
+      run: nuget restore WhosBottingPlugin.sln
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
+
     - name: Build Solution
-      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release
+      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="Any CPU"
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
