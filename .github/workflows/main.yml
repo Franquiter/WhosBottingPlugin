@@ -13,33 +13,39 @@ jobs:
     - name: Force SDK Structure
       shell: pwsh
       run: |
-        # 1. Clonar el SDK a una carpeta temporal
+        # 1. Clonar el SDK oficial
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Crear la ruta exacta que el compilador está gritando por encontrar
-        $dest = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        if (!(Test-Path $dest)) { New-Item -ItemType Directory -Force -Path $dest }
+        # 2. Definir la ruta base que espera el compilador (absoluta)
+        $baseDir = (Get-Item .).FullName
+        $includePath = "$baseDir\sdk\bakkesmodsdk\include\bakkesmod\plugin"
         
-        # 3. Buscar todos los .h en el clon y meterlos en la carpeta final
-        # No importa donde estén en sdk_temp, los movemos al destino correcto
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $dest -Force
+        # 3. Crear las carpetas una por una para asegurar éxito
+        if (!(Test-Path $includePath)) { 
+            New-Item -ItemType Directory -Force -Path $includePath 
+        }
         
-        # 4. Verificación visual en el log
-        Write-Host "--- CONTENIDO DE LA CARPETA SDK ---"
-        Get-ChildItem -Path $dest
+        # 4. Copiar TODOS los .h desde el clon a la subcarpeta final
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
+        
+        # Verificación visual: Si esto no muestra archivos, el build fallará
+        Write-Host "Archivos en $includePath :"
+        ls $includePath
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Crear version.h en el lugar correcto (según tu log es la subcarpeta)
+        # Crear version.h en la subcarpeta del código fuente
         $vPath = "WhosBottingPlugin/version.h"
-        if (!(Test-Path $vPath)) { New-Item -ItemType File -Path $vPath -Force -Value "" }
-
-        # Forzamos BakkesModPath para que coincida con la estructura
+        New-Item -ItemType File -Path $vPath -Force -Value ""
+        
+        $baseDir = (Get-Item .).FullName
+        
+        # Compilar forzando el BakkesModPath absoluto
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
-          /p:BakkesModPath="$((Get-Item .).FullName)\sdk" `
+          /p:BakkesModPath="$baseDir\sdk" `
           /p:PreBuildEvent= `
           /p:PostBuildEvent=
 
@@ -49,5 +55,5 @@ jobs:
       with:
         name: WhosBotting-Plugin
         path: |
-          **/*.dll
+          **/Release/*.dll
           **/*.set
