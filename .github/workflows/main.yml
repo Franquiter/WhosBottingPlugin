@@ -10,26 +10,31 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download BakkesMod SDK
+    - name: Download and Fix SDK Path
       shell: pwsh
       run: |
-        # Descargamos las librerías que te faltan (BakkesMod SDK)
-        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk
-        # Le decimos al sistema dónde las guardamos
+        # Bajamos el SDK
+        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
+        # Creamos la estructura de carpetas que espera el archivo .vcxproj (según tu log)
+        mkdir -p sdk/bakkesmodsdk/include/bakkesmod/plugin
+        # Movemos los archivos necesarios al lugar correcto
+        cp sdk_temp/bakkesmod/plugin/* sdk/bakkesmodsdk/include/bakkesmod/plugin/
+        # Guardamos la ruta
         echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión para que no falle el script de powershell
+        # Creamos el archivo de versión para evitar el error de PowerShell
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
-        # Compilamos apuntando al SDK que acabamos de bajar
-        msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent=
+        # Compilamos desactivando los eventos que dan error
+        msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent= /p:PostBuildEvent=
 
     - name: Upload Artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: Plugin-Files
+        name: Plugin-Final
         path: |
           **/*.dll
+          **/*.set
