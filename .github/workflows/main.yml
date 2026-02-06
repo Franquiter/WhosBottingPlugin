@@ -10,45 +10,44 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Force Fix SDK
+    - name: Download and Force SDK
       shell: pwsh
       run: |
-        # 1. Bajamos el SDK
-        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_source
+        # 1. Clonamos el SDK
+        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Creamos la estructura que el código espera RELATIVAMENTE
-        # El código busca <bakkesmod/plugin/file.h>
-        # Así que creamos esa carpeta en la raíz del proyecto
-        $finalPath = "bakkesmod/plugin"
+        # 2. Creamos la estructura EXACTA que el compilador pide en el log
+        # El log dice: ID:\...\sdk\bakkesmodsdk\include
+        # Y el código busca: bakkesmod/plugin/bakkesmodplugin.h
+        $finalPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $finalPath
         
-        # 3. Metemos todos los archivos .h ahí
-        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
+        # 3. Copiamos todos los archivos .h directamente ahí
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
         
-        # 4. También los metemos en la carpeta 'sdk' por si el .vcxproj manda
-        New-Item -ItemType Directory -Force -Path "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination "sdk/bakkesmodsdk/include/bakkesmod/plugin" -Force
+        # 4. Verificación visual en el log (para nosotros)
+        echo "Contenido de la carpeta creada:"
+        ls $finalPath
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Crear versión vacía
+        # Creamos el version.h para que no salte el script de PS
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
         
-        # Compilar agregando la raíz actual (.) como ruta de inclusión extra
+        # Forzamos a MSBuild a ignorar los scripts automáticos y usar nuestra ruta
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
           /p:BakkesModPath="$((Get-Item .).FullName)\sdk" `
           /p:PreBuildEvent= `
-          /p:PostBuildEvent= `
-          /p:CL_AdditionalIncludeDirectories="$((Get-Item .).FullName)"
+          /p:PostBuildEvent=
 
     - name: Upload Artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: WhosBotting-Plugin-DLL
+        name: WhosBotting-Plugin
         path: |
           **/*.dll
           **/*.set
