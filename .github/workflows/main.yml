@@ -5,48 +5,44 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Plugin Code
+      uses: actions/checkout@v4
+      with:
+        path: plugin_code
+
+    - name: Checkout BakkesMod SDK (Public Mirror)
+      uses: actions/checkout@v4
+      with:
+        repository: bakkesmodorg/BakkesMod2-Plugins
+        path: sdk_folder
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Construct SDK Hierarchy
+    - name: Prepare SDK and Version
       shell: pwsh
       run: |
-        # 1. Descargar el SDK oficial desde el sitio de BakkesMod
-        $sdkUrl = "https://github.com/bakkesmodorg/BakkesMod2-Plugins/archive/refs/heads/master.zip"
-        Invoke-WebRequest -Uri $sdkUrl -OutFile "sdk.zip"
-        Expand-Archive -Path "sdk.zip" -DestinationPath "sdk_temp"
+        # 1. Crear la ruta que el compilador busca: sdk/bakkesmodsdk/include/bakkesmod/plugin
+        $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $includePath
         
-        # 2. Definir rutas (basadas en lo que MSBuild busca en tu log)
-        $includeRoot = "sdk/bakkesmodsdk/include"
-        $finalDir = "$includeRoot/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $finalDir
+        # 2. Copiar los headers desde el repo que acabamos de bajar
+        # Buscamos todos los .h en el repo del SDK y los metemos en la carpeta plugin
+        Get-ChildItem -Path "sdk_folder" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
         
-        # 3. Mover los archivos .h de la carpeta extraída
-        # Buscamos en la carpeta extraída (que suele tener el nombre del repo-master)
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalDir -Force
-        
-        # 4. TRUCO FINAL: Si el archivo bakkesmodplugin.h sigue faltando, 
-        # lo descargamos individualmente desde el mirror público
-        if (!(Test-Path "$finalDir/bakkesmodplugin.h")) {
-          $rawUrl = "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin/bakkesmodplugin.h"
-          Invoke-WebRequest -Uri $rawUrl -OutFile "$finalDir/bakkesmodplugin.h"
-        }
+        # 3. Crear version.h vacío para evitar el error del script original
+        # Lo ponemos en todas las posibles ubicaciones para estar seguros
+        New-Item -ItemType File -Path "plugin_code/WhosBottingPlugin/version.h" -Force -Value ""
+        New-Item -ItemType File -Path "plugin_code/version.h" -Force -Value ""
 
-        Write-Host "--- VERIFICACIÓN DE ARCHIVOS ---"
-        ls $finalDir
+        Write-Host "--- Estructura creada con éxito ---"
+        ls $includePath
 
     - name: Build Solution
       shell: pwsh
+      working-directory: plugin_code
       run: |
-        # Asegurar version.h
-        $projPath = "WhosBottingPlugin/WhosBottingPlugin/version.h"
-        if (!(Test-Path "WhosBottingPlugin/WhosBottingPlugin")) { $projPath = "WhosBottingPlugin/version.h" }
-        New-Item -ItemType File -Path $projPath -Force -Value ""
-        
-        $absPath = (Get-Item .).FullName
-        
+        $absPath = (Get-Item ..).FullName
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
