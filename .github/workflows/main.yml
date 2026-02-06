@@ -10,10 +10,10 @@ jobs:
       with:
         path: plugin_code
 
-    - name: Checkout BakkesMod SDK (Public Mirror)
+    - name: Checkout BakkesMod SDK (Full Headers)
       uses: actions/checkout@v4
       with:
-        repository: bakkesmodorg/BakkesMod2-Plugins
+        repository: thelooter/bakkesmodapi
         path: sdk_folder
 
     - name: Setup MSBuild
@@ -22,21 +22,25 @@ jobs:
     - name: Prepare SDK and Version
       shell: pwsh
       run: |
-        # 1. Crear la ruta que el compilador busca: sdk/bakkesmodsdk/include/bakkesmod/plugin
+        # 1. Crear la ruta exacta: sdk/bakkesmodsdk/include/bakkesmod/plugin
         $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
         New-Item -ItemType Directory -Force -Path $includePath
         
-        # 2. Copiar los headers desde el repo que acabamos de bajar
-        # Buscamos todos los .h en el repo del SDK y los metemos en la carpeta plugin
+        # 2. Copiar los headers desde el nuevo repo (este tiene los archivos base)
+        # Primero intentamos copiar la estructura completa de headers
+        if (Test-Path "sdk_folder/include/bakkesmod") {
+            Copy-Item -Path "sdk_folder/include/bakkesmod/*" -Destination "sdk/bakkesmodsdk/include/bakkesmod" -Recurse -Force
+        }
+        
+        # 3. Asegurar que los archivos específicos estén en /plugin/ por si acaso
         Get-ChildItem -Path "sdk_folder" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
         
-        # 3. Crear version.h vacío para evitar el error del script original
-        # Lo ponemos en todas las posibles ubicaciones para estar seguros
+        # 4. Crear version.h para el plugin
         New-Item -ItemType File -Path "plugin_code/WhosBottingPlugin/version.h" -Force -Value ""
         New-Item -ItemType File -Path "plugin_code/version.h" -Force -Value ""
 
-        Write-Host "--- Estructura creada con éxito ---"
-        ls $includePath
+        Write-Host "--- LISTA DE HEADERS ENCONTRADOS ---"
+        Get-ChildItem -Path "sdk/bakkesmodsdk/include" -Filter *.h -Recurse | Select-Object Name
 
     - name: Build Solution
       shell: pwsh
@@ -56,5 +60,5 @@ jobs:
       with:
         name: WhosBotting-Plugin
         path: |
-          **/Release/*.dll
-          **/*.set
+          plugin_code/**/*.dll
+          plugin_code/**/*.set
