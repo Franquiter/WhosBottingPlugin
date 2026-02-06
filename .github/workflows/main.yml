@@ -13,15 +13,17 @@ jobs:
     - name: Download BakkesMod SDK
       shell: pwsh
       run: |
+        # Descargamos las librerías que te faltan (BakkesMod SDK)
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk
+        # Le decimos al sistema dónde las guardamos
         echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión manualmente para evitar el error del script
+        # Creamos el archivo de versión para que no falle el script de powershell
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
-        # Ejecutamos la compilación desactivando el PreBuildEvent que da error
+        # Compilamos apuntando al SDK que acabamos de bajar
         msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent=
 
     - name: Upload Artifact
@@ -31,4 +33,3 @@ jobs:
         name: Plugin-Files
         path: |
           **/*.dll
-          **/*.set
