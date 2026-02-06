@@ -10,21 +10,14 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v2
-
-    - name: Restore NuGet Packages
-      run: nuget restore WhosBottingPlugin.sln
-
     - name: Build Solution
-      # Forzamos la compilación ignorando validaciones de ruta locales
-      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="Any CPU" /p:SkipInvalidConfigurations=true
+      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64"
 
     - name: Upload Artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: Plugin-DLL
+        name: Plugin-Files
         path: |
           **/*.dll
-          !**/obj/**
+          **/*.set
