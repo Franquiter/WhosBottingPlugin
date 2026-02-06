@@ -11,84 +11,95 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Create Heavy Mock SDK V3
+    - name: Create Full Environment Mock
       shell: pwsh
       run: |
-        $base = "sdk/bakkesmodsdk/include/bakkesmod"
-        New-Item -ItemType Directory -Force -Path "$base/plugin"
-        New-Item -ItemType Directory -Force -Path "$base/wrappers"
+        $bmPath = "sdk/bakkesmodsdk/include/bakkesmod"
+        $cprPath = "sdk/bakkesmodsdk/include/cpr" # Simularemos CPR aquí
+        New-Item -ItemType Directory -Force -Path "$bmPath/plugin"
+        New-Item -ItemType Directory -Force -Path "$bmPath/wrappers"
+        New-Item -ItemType Directory -Force -Path $cprPath
 
+        # 1. El Mock Maestro de BakkesMod mejorado
         $masterHeader = @"
         #ifndef BAKKESMOD_MOCK_H
         #define BAKKESMOD_MOCK_H
-
         #include <string>
         #include <vector>
         #include <memory>
-        #include <map>
         #include <optional>
         #include <chrono>
 
         #define BAKKESMOD_PLUGIN_API __declspec(dllexport)
 
         namespace BakkesMod {
-            class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); };
+            namespace Plugin { // Namespace anidado que pedía el error C3083
+                class BakkesModPlugin { 
+                public: 
+                    std::shared_ptr<class GameWrapper> gameWrapper; 
+                    std::shared_ptr<class CVarManagerWrapper> cvarManager; 
+                    virtual void onLoad() = 0; 
+                    virtual void onUnload() = 0; 
+                    virtual void RenderSettings() = 0;
+                };
+                class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
+                class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
+            }
+
+            class CVarWrapper { 
+            public: 
+                float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue();
+                void setValue(std::string val); void setValue(float val); void setValue(int val);
+            };
+
             class CVarManagerWrapper { 
             public: 
                 void log(std::string t); 
-                CVarWrapper getCVar(std::string name);
+                CVarWrapper getCvar(std::string name); // Corregido: antes puse getCVar (V mayúscula)
                 CVarWrapper registerCvar(std::string name, std::string defaultVal, std::string desc = "", bool searchAble = true, bool hasMin = false, float min = 0, bool hasMax = false, float max = 0, bool save = true);
             };
-            class GameWrapper { 
-            public: 
-                void HookEvent(std::string e, void* f); 
-                void UnhookEvent(std::string e);
-                void Execute(void* f);
-                bool IsInGame();
-                bool IsInOnlineGame();
-            };
-            class BakkesModPlugin { 
-            public: 
-                std::shared_ptr<GameWrapper> gameWrapper; 
-                std::shared_ptr<CVarManagerWrapper> cvarManager; 
-                virtual void onLoad() = 0; 
-                virtual void onUnload() = 0; 
-            };
-            class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
-            class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
+
+            class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };
+            class ReplaySoccarWrapper { public: std::string GetId(); std::string GetDate(); int GetNumFrames(); };
+            class ServerWrapper { public: bool IsNull(); };
         }
 
-        // Compatibilidad con código que no usa el namespace explícito
         using namespace BakkesMod;
-        
-        // Stubs para clases adicionales detectadas en el log
-        class ServerWrapper {};
-        class ReplaySoccarWrapper {};
-
+        using namespace BakkesMod::Plugin;
         #endif
         "@
 
-        $files = @(
-            "plugin/bakkesmodplugin.h", "plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h",
-            "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h",
-            "wrappers/wrapperstructs.h", "wrappers/arraywrapper.h", "wrappers/cvarwrapper.h"
-        )
+        # 2. Crear archivos BakkesMod
+        $files = @("plugin/bakkesmodplugin.h", "plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
+        foreach ($f in $files) { Set-Content -Path "$bmPath/$f" -Value $masterHeader }
 
-        foreach ($f in $files) {
-            Set-Content -Path "$base/$f" -Value $masterHeader
+        # 3. MOCK de CPR (Para que API.cpp no falle)
+        Set-Content -Path "$cprPath/cpr.h" -Value @"
+        #pragma once
+        #include <string>
+        namespace cpr {
+            struct Response { int status_code; std::string text; std::string error; };
+            template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }
+            template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }
+            struct Url { Url(std::string u) : url(u) {} std::string url; };
+            struct Body { Body(std::string b) : body(b) {} std::string body; };
+            struct Header { Header(std::initializer_list<std::pair<const std::string, std::string>> l) {} };
         }
+        "@
 
-        # Crear archivo de versión
-        New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value ""
-        
+        # 4. version.h
+        New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
+
     - name: Build Solution
       shell: pwsh
       run: |
         $absPath = (Get-Item .).FullName
+        # Añadimos la ruta de CPR a los Includes de MSBuild
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
           /p:BakkesModPath="$absPath\sdk" `
+          /p:IncludePath="$absPath\sdk\bakkesmodsdk\include;$(IncludePath)" `
           /p:PreBuildEvent= `
           /p:PostBuildEvent=
 
