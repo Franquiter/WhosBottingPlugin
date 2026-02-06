@@ -17,7 +17,7 @@ jobs:
       run: nuget restore WhosBottingPlugin.sln
 
     - name: Build Solution
-      # Añadimos parámetros para ignorar errores de librerías faltantes del juego
+      # Forzamos la compilación ignorando validaciones de ruta locales
       run: msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="Any CPU" /p:SkipInvalidConfigurations=true
 
     - name: Upload Artifact
@@ -26,5 +26,5 @@ jobs:
       with:
         name: Plugin-DLL
         path: |
-          **/Release/*.dll
-          **/bin/*.dll
+          **/*.dll
+          !**/obj/**
