@@ -10,40 +10,39 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Force BakkesMod SDK Structure
+    - name: Force Fix SDK
       shell: pwsh
       run: |
         # 1. Bajamos el SDK
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_source
         
-        # 2. Creamos la estructura que el COMPILADOR quiere (según tu log)
-        $includeBase = "sdk/bakkesmodsdk/include"
-        New-Item -ItemType Directory -Force -Path "$includeBase/bakkesmod/plugin"
+        # 2. Creamos la estructura que el código espera RELATIVAMENTE
+        # El código busca <bakkesmod/plugin/file.h>
+        # Así que creamos esa carpeta en la raíz del proyecto
+        $finalPath = "bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $finalPath
         
-        # 3. Copiamos los archivos .h a esa ruta específica
-        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination "$includeBase/bakkesmod/plugin" -Force
+        # 3. Metemos todos los archivos .h ahí
+        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
         
-        # 4. TRUCO FINAL: Copiamos los mismos archivos un nivel arriba por si acaso
-        Copy-Item -Path "$includeBase/bakkesmod/plugin/*" -Destination "$includeBase" -Force
-        
-        # 5. Guardamos la ruta absoluta
-        $fullPath = (Get-Item .).FullName + "\sdk"
-        echo "BAKKESMOD_SDK=$fullPath" >> $env:GITHUB_ENV
+        # 4. También los metemos en la carpeta 'sdk' por si el .vcxproj manda
+        New-Item -ItemType Directory -Force -Path "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        Get-ChildItem -Path "sdk_source" -Filter *.h -Recurse | Copy-Item -Destination "sdk/bakkesmodsdk/include/bakkesmod/plugin" -Force
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión manual
+        # Crear versión vacía
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
         
-        # Compilamos forzando la ruta del SDK
+        # Compilar agregando la raíz actual (.) como ruta de inclusión extra
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
-          /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" `
+          /p:BakkesModPath="$((Get-Item .).FullName)\sdk" `
           /p:PreBuildEvent= `
           /p:PostBuildEvent= `
-          /p:IncludePath="${{ env.BAKKESMOD_SDK }}\bakkesmodsdk\include"
+          /p:CL_AdditionalIncludeDirectories="$((Get-Item .).FullName)"
 
     - name: Upload Artifact
       if: always()
