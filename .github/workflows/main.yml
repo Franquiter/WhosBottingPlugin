@@ -13,21 +13,24 @@ jobs:
     - name: Download and Fix SDK Path
       shell: pwsh
       run: |
-        # Bajamos el SDK
+        # Bajamos el SDK oficial
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
-        # Creamos la estructura de carpetas que espera el archivo .vcxproj (según tu log)
-        mkdir -p sdk/bakkesmodsdk/include/bakkesmod/plugin
-        # Movemos los archivos necesarios al lugar correcto
-        cp sdk_temp/bakkesmod/plugin/* sdk/bakkesmodsdk/include/bakkesmod/plugin/
-        # Guardamos la ruta
+        
+        # Creamos la ruta exacta que tu log de error pedía
+        $targetPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $targetPath
+        
+        # Copiamos los archivos desde la carpeta 'include' del SDK descargado
+        # Aquí es donde estaba el truco: la carpeta se llama 'include' en el origen
+        cp sdk_temp/include/bakkesmod/plugin/* $targetPath/
+        
+        # Guardamos la ruta para el compilador
         echo "BAKKESMOD_SDK=$((Get-Item .).FullName)\sdk" >> $env:GITHUB_ENV
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el archivo de versión para evitar el error de PowerShell
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
-        # Compilamos desactivando los eventos que dan error
         msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="x64" /p:BakkesModPath="${{ env.BAKKESMOD_SDK }}" /p:PreBuildEvent= /p:PostBuildEvent=
 
     - name: Upload Artifact
