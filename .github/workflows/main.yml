@@ -5,22 +5,22 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
-
-    - name: Restore packages
-      run: nuget restore WhosBottingPlugin.sln
+    - uses: actions/checkout@v4
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Restore NuGet Packages
+      run: nuget restore WhosBottingPlugin.sln
 
     - name: Build Solution
-      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release /p:Platform="Any CPU"
+      run: msbuild WhosBottingPlugin.sln /p:Configuration=Release
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Plugin-DLL
         path: "**/WhosBottingPlugin.dll"
