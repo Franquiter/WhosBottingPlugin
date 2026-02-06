@@ -46,29 +46,3 @@ jobs:
                 class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
                 class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
             }
-
-            class CVarWrapper { 
-            public: 
-                float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue();
-                void setValue(std::string val); void setValue(float val); void setValue(int val);
-                bool operator!() const { return false; } // Para el error del operador !
-            };
-
-            class CVarManagerWrapper { 
-            public: 
-                void log(std::string t); 
-                CVarWrapper getCvar(std::string name);
-                CVarWrapper registerCvar(std::string name, std::string defaultVal, std::string desc = "", bool searchAble = true, bool hasMin = false, float min = 0, bool hasMax = false, float max = 0, bool save = true);
-            };
-
-            class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };
-            class ReplaySoccarWrapper { public: std::string GetId(); std::string GetDate(); int GetNumFrames(); };
-            class ServerWrapper { public: bool IsNull(); };
-        }
-
-        using namespace BakkesMod;
-        using namespace BakkesMod::Plugin;
-        #endif
-        "@
-
-        $files = @("plugin/bakkesmodplugin.h", "plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h",
