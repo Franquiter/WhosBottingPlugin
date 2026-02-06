@@ -11,41 +11,59 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Create Mock SDK
+    - name: Create Full Mock SDK
       shell: pwsh
       run: |
-        # 1. Crear la ruta exacta
-        $pluginPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        $basePath = "sdk/bakkesmodsdk/include/bakkesmod"
+        $pluginPath = "$basePath/plugin"
+        $wrapperPath = "$basePath/wrappers"
         New-Item -ItemType Directory -Force -Path $pluginPath
+        New-Item -ItemType Directory -Force -Path $wrapperPath
         
-        # 2. CREAR LOS ARCHIVOS QUE FALTAN (Stubs)
-        # Esto define lo mínimo necesario para que C++ compile sin error 1083
-        
-        $bakkesHeader = @"
+        # 1. Headers en /plugin/
+        Set-Content -Path "$pluginPath/bakkesmodplugin.h" -Value @"
         #pragma once
         #include <string>
-        #include <vector>
-        class BakkesModPlugin { public: virtual void onLoad() = 0; virtual void onUnload() = 0; };
+        #include <memory>
+        class CVarManagerWrapper;
+        class GameWrapper;
+        class BakkesModPlugin { 
+        public: 
+            std::shared_ptr<GameWrapper> gameWrapper;
+            std::shared_ptr<CVarManagerWrapper> cvarManager;
+            virtual void onLoad() = 0; 
+            virtual void onUnload() = 0; 
+        };
         "@
-        Set-Content -Path "$pluginPath/bakkesmodplugin.h" -Value $bakkesHeader
-        
-        $settingsHeader = @"
-        #pragma once
-        class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; };
-        "@
-        Set-Content -Path "$pluginPath/PluginSettingsWindow.h" -Value $settingsHeader
 
-        $sdkHeader = @"
+        Set-Content -Path "$pluginPath/PluginSettingsWindow.h" -Value @"
         #pragma once
-        #define BAKKESMOD_PLUGIN_API __declspec(dllexport)
+        #include <string>
+        class PluginSettingsWindow { 
+        public: 
+            virtual void RenderSettings() = 0; 
+            virtual std::string GetPluginName() = 0; 
+        };
         "@
-        Set-Content -Path "$pluginPath/bakkesmodsdk.h" -Value $sdkHeader
+
+        # Otros archivos que el log pidió
+        Set-Content -Path "$pluginPath/bakkesmodsdk.h" -Value "#pragma once`n#define BAKKESMOD_PLUGIN_API __declspec(dllexport)"
+        Set-Content -Path "$pluginPath/pluginwindow.h" -Value "#pragma once"
+
+        # 2. Headers en /wrappers/ (El que causó el error C1083)
+        Set-Content -Path "$wrapperPath/cvarmanagerwrapper.h" -Value @"
+        #pragma once
+        #include <string>
+        class CVarManagerWrapper {
+        public:
+            void log(std::string text);
+        };
+        "@
 
         # 3. Crear version.h
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value ""
         
-        Write-Host "--- MOCK SDK CREADO ---"
-        ls $pluginPath
+        Write-Host "--- MOCK SDK AMPLIADO CREADO ---"
 
     - name: Build Solution
       shell: pwsh
