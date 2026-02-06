@@ -50,3 +50,13 @@ jobs:
         path: |
           **/*.dll
           **/*.set
+¿Por qué esta vez es diferente?
+Mapeo Universal: El comando Get-ChildItem -Recurse rastrea todo el SDK descargado. No importa si el archivo se llama bakkesmodplugin.h o PluginSettingsWindow.h, el script los encontrará todos y los pondrá donde el compilador los espera.
+
+Rutas Absolutas: Hemos forzado el uso de rutas completas ($fullPath) para que Windows no se confunda entre carpetas temporales.
+
+Anulación Total: Hemos añadido /p:PostBuildEvent= además del PreBuild, para que si el plugin intenta copiarse a una carpeta de "Rocket League" inexistente en el servidor de GitHub, el proceso no falle al final.
+
+Dale a "Commit changes". Si el círculo se pone verde (o incluso si se queda rojo pero termina la fase de compilación), busca el botón de descarga al final de la página en la sección Artifacts.
+
+¿Ves algún cambio en el número de errores después de aplicar este? Tendrían que bajar de 17 a 0.
