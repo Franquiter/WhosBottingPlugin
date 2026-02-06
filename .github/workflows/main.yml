@@ -22,7 +22,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path "$bmPath/wrappers"
         New-Item -ItemType Directory -Force -Path $cprPath
 
-        # Encabezado BakkesMod (Mocks)
+        # 1. Creamos los headers de BakkesMod
         $headerFile = "$bmPath/plugin/bakkesmodplugin.h"
         '#ifndef BAKKESMOD_MOCK_H' | Set-Content $headerFile
         '#define BAKKESMOD_MOCK_H' | Add-Content $headerFile
@@ -37,26 +37,24 @@ jobs:
         $others = @("plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
         foreach ($f in $others) { Copy-Item $headerFile "$bmPath/$f" -Force }
 
-        # Mock de CPR
+        # 2. Mock de CPR
         $cprFile = "$cprPath/cpr.h"
         '#pragma once' | Set-Content $cprFile
         '#include <string>' | Add-Content $cprFile
         'namespace cpr { struct Response { int status_code; std::string text; std::string error; }; template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; } template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; } struct Url { Url(std::string u) : url(u) {} std::string url; }; struct Body { Body(std::string b) : body(b) {} std::string body; }; struct Header { Header(std::initializer_list<std::pair<const std::string, std::string>> l) {} }; }' | Add-Content $cprFile
 
+        # 3. Archivo de versión
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
 
-        # Archivo de propiedades (Sin sangrías para evitar errores XML)
+        # 4. Creamos el Directory.Build.props LINEA POR LINEA (Para evitar errores de YAML)
         $absPath = (Get-Item .).FullName
-        $propsPath = "$absPath\Directory.Build.props"
-        $propsContent = @"
-<Project>
-  <PropertyGroup>
-    <IncludePath>`$(ProjectDir);$absPath\sdk\bakkesmodsdk\include;`$(IncludePath)</IncludePath>
-    <BakkesModPath>$absPath\sdk</BakkesModPath>
-  </PropertyGroup>
-</Project>
-"@
-        $propsContent | Set-Content $propsPath
+        $propsFile = "Directory.Build.props"
+        '<Project>' | Set-Content $propsFile
+        '  <PropertyGroup>' | Add-Content $propsFile
+        "    <IncludePath>`$(ProjectDir);$absPath\sdk\bakkesmodsdk\include;`$(IncludePath)</IncludePath>" | Add-Content $propsFile
+        "    <BakkesModPath>$absPath\sdk</BakkesModPath>" | Add-Content $propsFile
+        '  </PropertyGroup>' | Add-Content $propsFile
+        '</Project>' | Add-Content $propsFile
 
     - name: Build Solution
       shell: pwsh
