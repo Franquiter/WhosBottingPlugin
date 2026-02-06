@@ -21,14 +21,14 @@ jobs:
 
         # --- MOCK UNIFICADO DE BAKKESMOD ---
         $mockFile = "$bmPath/plugin/bakkesmodplugin.h"
-        @'
+        $mockContent = @'
         #pragma once
         #include <string>
         #include <vector>
         #include <memory>
         #include <optional>
         #include <stdint.h>
-        #include <chrono> // Fixes system_clock errors
+        #include <chrono>
         
         #define BAKKESMOD_PLUGIN_API __declspec(dllexport)
 
@@ -37,7 +37,7 @@ jobs:
             public: 
                 float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); 
                 void setValue(std::string v); 
-                void setValue(bool v) { setValue(v ? std::string("1") : std::string("0")); } // Fixes bool conversion error
+                void setValue(bool v) { setValue(v ? std::string("1") : std::string("0")); }
                 bool operator!() const { return false; } 
             };
 
@@ -67,36 +67,11 @@ jobs:
         } }
 
         using namespace BakkesMod::Plugin;
-        '@ | Set-Content $mockFile
+        '@
+        $mockContent | Set-Content $mockFile
 
-        # Create redirections
+        # Crear redirecciones
         $others = @("plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
         foreach ($f in $others) { 
             "#pragma once`n#include `"bakkesmod/plugin/bakkesmodplugin.h`"" | Set-Content "$bmPath/$f"
         }
-
-        # --- MOCK DE CPR ---
-        $cprFile = "$cprPath/cpr.h"
-        @'
-        #pragma once
-        #include <string>
-        #include <initializer_list>
-        #include <utility>
-        namespace cpr { 
-          struct Response { int status_code; std::string text; std::string error; };
-          struct Url { Url(std::string u) : url(u) {} std::string url; };
-          struct Body { Body(std::string b) : body(b) {} std::string body; };
-          struct Header { Header(std::initializer_list<std::pair<std::string, std::string>> l) {} };
-          struct Timeout { Timeout(long m) {} };
-          struct ConnectTimeout { ConnectTimeout(long m) {} };
-          template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }
-          template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }
-        }
-        '@ | Set-Content $cprFile
-
-        New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
-
-        $absPath = (Get-Item .).FullName
-        $propsFile = "Directory.Build.props"
-        '<Project><PropertyGroup>' | Set-Content $propsFile
-        " <IncludePath>`$(ProjectDir);
