@@ -10,32 +10,37 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download and Force SDK Path
+    - name: Download and Structural Fix SDK
       shell: pwsh
       run: |
-        # 1. Bajamos el SDK (es pequeño, así que clonamos todo)
+        # 1. Clonar SDK
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Creamos la ruta de destino EXACTA que pide tu proyecto
-        $targetPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $targetPath
+        # 2. Crear la carpeta raíz de inclusión
+        $includeRoot = "sdk/bakkesmodsdk/include"
         
-        # 3. Buscamos TODOS los archivos .h en lo que bajamos y los movemos al destino
-        # Esto evita errores si la carpeta se llama distinto
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $targetPath -Force
+        # 3. Crear la subcarpeta jerárquica EXACTA que pide el #include
+        # Si el código dice <bakkesmod/plugin/file.h>, necesitamos:
+        # include/bakkesmod/plugin/file.h
+        $finalPath = "$includeRoot/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $finalPath
         
-        echo "Archivos listos en $targetPath :"
-        ls $targetPath
+        # 4. Copiar todos los .h allí
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
+        
+        # Verificación para el log
+        echo "Buscando bakkesmodplugin.h en:"
+        Get-ChildItem -Path $includeRoot -Filter "bakkesmodplugin.h" -Recurse
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Crear version.h vacío para evitar que el script de pre-build falle
-        if (!(Test-Path "WhosBottingPlugin/version.h")) {
+        # Evitar fallos por el script de versionado original
+        if (Test-Path "WhosBottingPlugin/update_version.ps1") {
+          echo "Hacks para saltar el pre-build script..."
           New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
         }
-        
-        # Compilación final
+
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
@@ -49,5 +54,5 @@ jobs:
       with:
         name: WhosBotting-Plugin
         path: |
-          **/Release/*.dll
+          **/*.dll
           **/*.set
