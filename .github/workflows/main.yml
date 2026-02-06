@@ -10,37 +10,32 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download and Structural Fix SDK
+    - name: Force SDK Structure
       shell: pwsh
       run: |
-        # 1. Clonar SDK
+        # 1. Clonar el SDK a una carpeta temporal
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Crear la carpeta raíz de inclusión
-        $includeRoot = "sdk/bakkesmodsdk/include"
+        # 2. Crear la ruta exacta que el compilador está gritando por encontrar
+        $dest = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        if (!(Test-Path $dest)) { New-Item -ItemType Directory -Force -Path $dest }
         
-        # 3. Crear la subcarpeta jerárquica EXACTA que pide el #include
-        # Si el código dice <bakkesmod/plugin/file.h>, necesitamos:
-        # include/bakkesmod/plugin/file.h
-        $finalPath = "$includeRoot/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $finalPath
+        # 3. Buscar todos los .h en el clon y meterlos en la carpeta final
+        # No importa donde estén en sdk_temp, los movemos al destino correcto
+        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $dest -Force
         
-        # 4. Copiar todos los .h allí
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
-        
-        # Verificación para el log
-        echo "Buscando bakkesmodplugin.h en:"
-        Get-ChildItem -Path $includeRoot -Filter "bakkesmodplugin.h" -Recurse
+        # 4. Verificación visual en el log
+        Write-Host "--- CONTENIDO DE LA CARPETA SDK ---"
+        Get-ChildItem -Path $dest
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Evitar fallos por el script de versionado original
-        if (Test-Path "WhosBottingPlugin/update_version.ps1") {
-          echo "Hacks para saltar el pre-build script..."
-          New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
-        }
+        # Crear version.h en el lugar correcto (según tu log es la subcarpeta)
+        $vPath = "WhosBottingPlugin/version.h"
+        if (!(Test-Path $vPath)) { New-Item -ItemType File -Path $vPath -Force -Value "" }
 
+        # Forzamos BakkesModPath para que coincida con la estructura
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
