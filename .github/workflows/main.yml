@@ -22,54 +22,54 @@ jobs:
         New-Item -ItemType Directory -Force -Path "$bmPath/wrappers"
         New-Item -ItemType Directory -Force -Path $cprPath
 
-        # Escribimos el encabezado principal línea por línea
+        # Escribimos el encabezado principal de BakkesMod
         $headerFile = "$bmPath/plugin/bakkesmodplugin.h"
-        " #ifndef BAKKESMOD_MOCK_H" | Set-Content $headerFile
-        " #define BAKKESMOD_MOCK_H" | Add-Content $headerFile
-        " #include <string>" | Add-Content $headerFile
-        " #include <vector>" | Add-Content $headerFile
-        " #include <memory>" | Add-Content $headerFile
-        " #define BAKKESMOD_PLUGIN_API __declspec(dllexport)" | Add-Content $headerFile
-        " namespace BakkesMod {" | Add-Content $headerFile
-        "   namespace Plugin {" | Add-Content $headerFile
-        "     class BakkesModPlugin { public: std::shared_ptr<class GameWrapper> gameWrapper; std::shared_ptr<class CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; };" | Add-Content $headerFile
-        "     class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };" | Add-Content $headerFile
-        "     class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };" | Add-Content $headerFile
-        "   }" | Add-Content $headerFile
-        "   class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string val); void setValue(float val); void setValue(int val); bool operator!() const { return false; } };" | Add-Content $headerFile
-        "   class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string name); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds='', bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };" | Add-Content $headerFile
-        "   class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };" | Add-Content $headerFile
-        "   class ReplaySoccarWrapper { public: std::string GetId(); std::string GetDate(); int GetNumFrames(); };" | Add-Content $headerFile
-        "   class ServerWrapper { public: bool IsNull(); };" | Add-Content $headerFile
-        " }" | Add-Content $headerFile
-        " using namespace BakkesMod; using namespace BakkesMod::Plugin;" | Add-Content $headerFile
-        " #endif" | Add-Content $headerFile
+        '#ifndef BAKKESMOD_MOCK_H' | Set-Content $headerFile
+        '#define BAKKESMOD_MOCK_H' | Add-Content $headerFile
+        '#include <string>' | Add-Content $headerFile
+        '#include <vector>' | Add-Content $headerFile
+        '#include <memory>' | Add-Content $headerFile
+        '#define BAKKESMOD_PLUGIN_API __declspec(dllexport)' | Add-Content $headerFile
+        'namespace BakkesMod { namespace Plugin { class BakkesModPlugin { public: std::shared_ptr<class GameWrapper> gameWrapper; std::shared_ptr<class CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; }; class PluginSettingsWindow { public: virtual void RenderSettings() = 0; virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; }; class PluginWindow { public: virtual void Render() = 0; virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; }; }' | Add-Content $headerFile
+        'class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string val); void setValue(float val); void setValue(int val); bool operator!() const { return false; } };' | Add-Content $headerFile
+        'class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string name); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds="", bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };' | Add-Content $headerFile
+        'class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); }; class ReplaySoccarWrapper { public: std::string GetId(); std::string GetDate(); int GetNumFrames(); }; class ServerWrapper { public: bool IsNull(); }; }' | Add-Content $headerFile
+        'using namespace BakkesMod; using namespace BakkesMod::Plugin;' | Add-Content $headerFile
+        '#endif' | Add-Content $headerFile
 
-        # Copiamos este archivo a todas las rutas que el plugin busca
+        # Copiar a otras rutas necesarias
         $others = @("plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
         foreach ($f in $others) { Copy-Item $headerFile "$bmPath/$f" -Force }
 
-        # Mock de CPR (Simplificado para evitar comillas conflictivas)
+        # Mock de CPR
         $cprFile = "$cprPath/cpr.h"
         '#pragma once' | Set-Content $cprFile
         '#include <string>' | Add-Content $cprFile
-        'namespace cpr { struct Response { int status_code; std::string text; std::string error; };' | Add-Content $cprFile
-        'template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
-        'template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
-        'struct Url { Url(std::string u) : url(u) {} std::string url; }; struct Body { Body(std::string b) : body(b) {} std::string body; };' | Add-Content $cprFile
-        'struct Header { Header(std::initializer_list<std::pair<const std::string, std::string>> l) {} }; }' | Add-Content $cprFile
+        'namespace cpr { struct Response { int status_code; std::string text; std::string error; }; template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; } template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; } struct Url { Url(std::string u) : url(u) {} std::string url; }; struct Body { Body(std::string b) : body(b) {} std::string body; }; struct Header { Header(std::initializer_list<std::pair<const std::string, std::string>> l) {} }; }' | Add-Content $cprFile
 
+        # Crear archivo de versión
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
+
+        # --- LA SOLUCIÓN AL ERROR MSB1006 ---
+        # Creamos un archivo de propiedades que MSBuild detecta automáticamente
+        $absPath = (Get-Item .).FullName
+        $propsPath = "$absPath\Directory.Build.props"
+        $propsContent = @"
+        <Project>
+          <PropertyGroup>
+            <IncludePath>`$(ProjectDir);$absPath\sdk\bakkesmodsdk\include;`$(IncludePath)</IncludePath>
+            <BakkesModPath>$absPath\sdk</BakkesModPath>
+          </PropertyGroup>
+        </Project>
+        "@
+        $propsContent | Set-Content $propsPath
 
     - name: Build Solution
       shell: pwsh
       run: |
-        $absPath = (Get-Item .).FullName
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
-          /p:BakkesModPath="$absPath\sdk" `
-          "/p:IncludePath=$absPath\sdk\bakkesmodsdk\include;`$(IncludePath)" `
           /p:PreBuildEvent= `
           /p:PostBuildEvent=
 
