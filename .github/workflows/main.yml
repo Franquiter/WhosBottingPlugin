@@ -19,42 +19,63 @@ jobs:
         $cprPath = "$includeBase/cpr"
         New-Item -ItemType Directory -Force -Path "$bmPath/plugin", "$bmPath/wrappers", $cprPath
 
-        # --- MOCK DE BAKKESMOD ---
-        $headerFile = "$bmPath/plugin/bakkesmodplugin.h"
-        '#pragma once' | Set-Content $headerFile
-        '#include <string>' | Add-Content $headerFile
-        '#include <vector>' | Add-Content $headerFile
-        '#include <memory>' | Add-Content $headerFile
-        '#include <optional>' | Add-Content $headerFile
-        '#include <chrono>' | Add-Content $headerFile
-        '#define BAKKESMOD_PLUGIN_API __declspec(dllexport)' | Add-Content $headerFile
-        'namespace BakkesMod { namespace Plugin { ' | Add-Content $headerFile
-        'class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string v); bool operator!() const { return false; } };' | Add-Content $headerFile
-        'class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string n); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds="", bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };' | Add-Content $headerFile
-        'class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };' | Add-Content $headerFile
-        'class BakkesModPlugin { public: std::shared_ptr<GameWrapper> gameWrapper; std::shared_ptr<CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; };' | Add-Content $headerFile
-        '} }' | Add-Content $headerFile
-        'using namespace BakkesMod::Plugin;' | Add-Content $headerFile
+        # --- MOCK UNIFICADO DE BAKKESMOD ---
+        # Definimos todo en un solo sitio y usamos include guards para evitar el error C2011
+        $mockFile = "$bmPath/plugin/bakkesmodplugin.h"
+        @'
+        #pragma once
+        #include <string>
+        #include <vector>
+        #include <memory>
+        #include <optional>
         
+        #define BAKKESMOD_PLUGIN_API __declspec(dllexport)
+
+        namespace BakkesMod { namespace Plugin {
+            class CVarWrapper { public: float getFloatValue(); int getIntValue(); std::string getStringValue(); bool getBoolValue(); void setValue(std::string v); bool operator!() const { return false; } };
+            class CVarManagerWrapper { public: void log(std::string t); CVarWrapper getCvar(std::string n); CVarWrapper registerCvar(std::string n, std::string dv, std::string ds="", bool s=true, bool hmn=false, float mn=0, bool hmx=false, float mx=0, bool sv=true); };
+            class GameWrapper { public: void HookEvent(std::string e, void* f); void UnhookEvent(std::string e); bool IsInGame(); };
+            
+            // Clases de Interfaz que faltaban
+            class PluginSettingsWindow { public: virtual std::string GetPluginName() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; };
+            class PluginWindow { public: virtual std::string GetMenuName() = 0; virtual std::string GetMenuTitle() = 0; virtual void SetImGuiContext(uintptr_t ctx) = 0; virtual bool ShouldBlockInput() = 0; virtual bool IsActiveOverlay() = 0; virtual void OnOpen() = 0; virtual void OnClose() = 0; virtual void Render() = 0; };
+
+            class BakkesModPlugin { public: std::shared_ptr<GameWrapper> gameWrapper; std::shared_ptr<CVarManagerWrapper> cvarManager; virtual void onLoad() = 0; virtual void onUnload() = 0; virtual void RenderSettings() = 0; };
+        } }
+
+        // Wrappers de juego adicionales
+        class ServerWrapper { public: bool operator!() const { return false; } };
+        class ReplaySoccarWrapper { public: std::string GetReplayName(); };
+
+        using namespace BakkesMod::Plugin;
+        '@ | Set-Content $mockFile
+
+        # Distribuir el Mock a los archivos que el compilador busca, pero usando un redireccionamiento simple
+        # para evitar redefiniciones de clases.
         $others = @("plugin/PluginSettingsWindow.h", "plugin/bakkesmodsdk.h", "plugin/pluginwindow.h", "wrappers/cvarmanagerwrapper.h", "wrappers/gamewrapper.h")
-        foreach ($f in $others) { Copy-Item $headerFile "$bmPath/$f" -Force }
+        foreach ($f in $others) { 
+            '#pragma once' | Set-Content "$bmPath/$f"
+            '#include "bakkesmod/plugin/bakkesmodplugin.h"' | Add-Content "$bmPath/$f"
+        }
 
         # --- MOCK DE CPR ---
         $cprFile = "$cprPath/cpr.h"
-        '#pragma once' | Set-Content $cprFile
-        '#include <string>' | Add-Content $cprFile
-        '#include <initializer_list>' | Add-Content $cprFile
-        '#include <utility>' | Add-Content $cprFile
-        'namespace cpr { ' | Add-Content $cprFile
-        '  struct Response { int status_code; std::string text; std::string error; };' | Add-Content $cprFile
-        '  struct Url { Url(std::string u) : url(u) {} std::string url; };' | Add-Content $cprFile
-        '  struct Body { Body(std::string b) : body(b) {} std::string body; };' | Add-Content $cprFile
-        '  struct Header { Header(std::initializer_list<std::pair<std::string, std::string>> l) {} };' | Add-Content $cprFile
-        '  struct Timeout { Timeout(long m) {} };' | Add-Content $cprFile
-        '  struct ConnectTimeout { ConnectTimeout(long m) {} };' | Add-Content $cprFile
-        '  template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
-        '  template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }' | Add-Content $cprFile
-        '}' | Add-Content $cprFile
+        @'
+        #pragma once
+        #include <string>
+        #include <initializer_list>
+        #include <utility>
+        namespace cpr { 
+          struct Response { int status_code; std::string text; std::string error; };
+          struct Url { Url(std::string u) : url(u) {} std::string url; };
+          struct Body { Body(std::string b) : body(b) {} std::string body; };
+          struct Header { Header(std::initializer_list<std::pair<std::string, std::string>> l) {} };
+          struct Timeout { Timeout(long m) {} };
+          struct ConnectTimeout { ConnectTimeout(long m) {} };
+          template <typename... Ts> Response Post(Ts... ts) { return {200, "{}", ""}; }
+          template <typename... Ts> Response Get(Ts... ts) { return {200, "{}", ""}; }
+        }
+        '@ | Set-Content $cprFile
 
         New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value "#define VERSION_MAJOR 1`n#define VERSION_MINOR 0"
 
