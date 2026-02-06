@@ -8,50 +8,50 @@ jobs:
     - name: Checkout Plugin Code
       uses: actions/checkout@v4
       with:
-        path: plugin_code
+        path: my_code
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download and Force SDK
+    - name: Get Official SDK Template
       shell: pwsh
       run: |
-        # 1. Crear estructura de carpetas
-        $includePath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $includePath
+        # 1. Clonamos la plantilla que SÍ trae los headers core
+        git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_full
         
-        # 2. Descargar Headers desde un Mirror estable (ZIP)
-        $url = "https://github.com/bakkesmodorg/BakkesMod2-Plugins/archive/refs/heads/master.zip"
-        Invoke-WebRequest -Uri $url -OutFile "sdk.zip"
-        Expand-Archive -Path "sdk.zip" -DestinationPath "sdk_temp" -Force
+        # 2. Crear la estructura que pide tu compilador
+        $targetDir = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        New-Item -ItemType Directory -Force -Path $targetDir
         
-        # 3. Copiar archivos .h de los ejemplos
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $includePath -Force
+        # 3. Intentar localizar los archivos core en el sistema o bajarlos de un mirror activo
+        # Usamos el mirror de C++ de BakkesMod que es más estable
+        $headers = @(
+            "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin/bakkesmodplugin.h",
+            "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin/bakkesmodsdk.h",
+            "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin/PluginSettingsWindow.h"
+        )
         
-        # 4. DESCARGA MANUAL DE LOS ARCHIVOS BASE (Los que faltaban)
-        # Bajamos directamente los headers esenciales del repo oficial de desarrollo
-        $baseRawUrl = "https://raw.githubusercontent.com/thelooter/bakkesmodapi/master/include/bakkesmod/plugin"
-        $files = @("bakkesmodplugin.h", "bakkesmodsdk.h", "PluginSettingsWindow.h", "bakkesmodplugin.h")
-        
-        foreach ($file in $files) {
-            try {
-                Invoke-WebRequest -Uri "$baseRawUrl/$file" -OutFile "$includePath/$file" -ErrorAction SilentlyContinue
-            } catch {
-                Write-Host "No se pudo bajar $file de la primera fuente, intentando secundaria..."
-            }
+        foreach ($url in $headers) {
+            $name = Split-Path $url -Leaf
+            Write-Host "Descargando crítico: $name"
+            Invoke-WebRequest -Uri $url -OutFile "$targetDir/$name" -UseBasicParsing
         }
 
-        # 5. Crear version.h
-        New-Item -ItemType File -Path "plugin_code/WhosBottingPlugin/version.h" -Force -Value ""
+        # 4. Copiar los headers adicionales del repo de plugins
+        Get-ChildItem -Path "sdk_full" -Filter *.h -Recurse | Copy-Item -Destination $targetDir -Force
         
-        Write-Host "--- VERIFICACIÓN FINAL DE ARCHIVOS ---"
-        ls $includePath
+        # 5. Mover tu código a la raíz de trabajo para MSBuild
+        Copy-Item -Path "my_code/*" -Destination "." -Recurse -Force
+        New-Item -ItemType File -Path "WhosBottingPlugin/version.h" -Force -Value ""
+
+        Write-Host "--- VERIFICACIÓN DE HEADERS CRÍTICOS ---"
+        if (Test-Path "$targetDir/bakkesmodplugin.h") { Write-Host "✅ bakkesmodplugin.h ENCONTRADO" }
+        else { Write-Host "❌ FALLO CRÍTICO: No se pudo obtener el header" }
 
     - name: Build Solution
       shell: pwsh
-      working-directory: plugin_code
       run: |
-        $absPath = (Get-Item ..).FullName
+        $absPath = (Get-Item .).FullName
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
@@ -65,5 +65,5 @@ jobs:
       with:
         name: WhosBotting-Plugin
         path: |
-          plugin_code/**/*.dll
-          plugin_code/**/*.set
+          **/*.dll
+          **/*.set
