@@ -10,32 +10,30 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Download and Force SDK
+    - name: Download and Fix SDK Path
       shell: pwsh
       run: |
-        # 1. Clonamos el SDK
+        # 1. Bajamos el SDK oficial
         git clone https://github.com/bakkesmodorg/BakkesMod2-Plugins.git sdk_temp
         
-        # 2. Creamos la estructura EXACTA que el compilador pide en el log
-        # El log dice: ID:\...\sdk\bakkesmodsdk\include
-        # Y el código busca: bakkesmod/plugin/bakkesmodplugin.h
-        $finalPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
-        New-Item -ItemType Directory -Force -Path $finalPath
+        # 2. Creamos la ruta EXACTA que espera el compilador según el log
+        $targetPath = "sdk/bakkesmodsdk/include/bakkesmod/plugin"
+        if (!(Test-Path $targetPath)) { New-Item -ItemType Directory -Force -Path $targetPath }
         
-        # 3. Copiamos todos los archivos .h directamente ahí
-        Get-ChildItem -Path "sdk_temp" -Filter *.h -Recurse | Copy-Item -Destination $finalPath -Force
+        # 3. Copiamos los archivos .h desde la carpeta 'include/bakkesmod/plugin' del repo clonado
+        # Nota: El repo de BakkesMod tiene los archivos en esa subestructura
+        cp sdk_temp/include/bakkesmod/plugin/* $targetPath/
         
-        # 4. Verificación visual en el log (para nosotros)
-        echo "Contenido de la carpeta creada:"
-        ls $finalPath
+        echo "Verificando archivos en el destino:"
+        ls $targetPath
 
     - name: Build Solution
       shell: pwsh
       run: |
-        # Creamos el version.h para que no salte el script de PS
+        # Creamos el version.h manual
         New-Item -Path "WhosBottingPlugin" -Name "version.h" -ItemType "file" -Value "" -Force
         
-        # Forzamos a MSBuild a ignorar los scripts automáticos y usar nuestra ruta
+        # Compilación limpia ignorando eventos previos que puedan fallar
         msbuild WhosBottingPlugin.sln `
           /p:Configuration=Release `
           /p:Platform="x64" `
@@ -47,7 +45,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: WhosBotting-Plugin
+        name: WhosBotting-Plugin-DLL
         path: |
           **/*.dll
           **/*.set
